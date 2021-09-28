@@ -7,7 +7,7 @@ from modules.camera_views import MainWindowCamera
 
 
 def my_exception_hook(exctype, value, traceback):
-    # print(exctype, value, traceback)
+    print(exctype, value, traceback)
     # sys._excepthook(exctype, value, traceback)
     sys.exit(1)
 
@@ -36,7 +36,6 @@ class MainWindow(QMainWindow):
         from modules.addit_windows import ColorRangeWindow
         self.color_range_wind = ColorRangeWindow(self)
         self.color_range_wind.show()
-
 
 if __name__ == '__main__':
     sys.excepthook = my_exception_hook

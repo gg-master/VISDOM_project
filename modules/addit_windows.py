@@ -17,9 +17,11 @@ class ColorRangeWindow(QWidget):
         self.VideoBox.setPixmap(QPixmap.fromImage(image))
 
     def initUI(self):
+        # Инициализация камеры
         self.camera = ColorRangeCamera(self.parent, self.VideoBox)
         self.camera.changePixmap.connect(self.setImage)
         self.camera.start()
 
     def closeEvent(self, a0: QCloseEvent) -> None:
+        # TODO Обработка добавленных элементов и их сохранение в json файле
         super().closeEvent(a0)

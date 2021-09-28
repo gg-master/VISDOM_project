@@ -34,9 +34,12 @@ class MainWindowCamera(QThread):
             bytesPerLine = ch * w
             convertToQtFormat = QImage(rgbImage.data, w, h, bytesPerLine,
                                        QImage.Format_RGB888)
-            # p = convertToQtFormat
-            p = convertToQtFormat.scaled(
-                self.label.width(), self.label.height(), Qt.KeepAspectRatio)
+            try:
+                p = convertToQtFormat.scaled(
+                    self.label.width(), self.label.height(),
+                    Qt.KeepAspectRatio)
+            except Exception:
+                pass
             self.changePixmap.emit(p)
 
     def get_img_with_objects(self, img):
@@ -76,24 +79,39 @@ class MainWindowCamera(QThread):
 
 
 class ColorRangeCamera(QThread):
+    changePixmap = pyqtSignal(QImage)
+
     def __init__(self, parent, label, *args, **kwargs):
         super().__init__(parent)
         self.label = label
         self.cap = cv2.VideoCapture(0 + cv2.CAP_DSHOW)
 
-    changePixmap = pyqtSignal(QImage)
+        self.hsv_min = np.array((0, 0, 0), np.uint8)
+        self.hsv_max = np.array((50, 255, 255), np.uint8)
+
+    def set_hmin_hmax(self, hsv_min, hsv_max):
+        self.hsv_min = np.array(hsv_min, np.uint8)
+        self.hsv_max = np.array(hsv_max, np.uint8)
 
     def run(self):
         while self.cap.isOpened() and self.label:
             flag, img = self.cap.read()
+            hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
             if not flag:
                 break
-            # img = self.get_img_with_objects(img)
-            rgbImage = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-            h, w, ch = rgbImage.shape
-            bytesPerLine = ch * w
-            convertToQtFormat = QImage(rgbImage.data, w, h, bytesPerLine,
-                                       QImage.Format_RGB888)
-            p = convertToQtFormat.scaled(
-                self.label.width(), self.label.height(), Qt.KeepAspectRatio)
+            thresh = cv2.inRange(hsv, self.hsv_min, self.hsv_max)
+
+            # Переводим в формат для qt
+            rgb_img = cv2.cvtColor(thresh, cv2.COLOR_BGR2RGB)
+            h, w, ch = rgb_img.shape
+            bytes_per_line = ch * w
+            convert_to_qt_format = QImage(rgb_img.data, w, h, bytes_per_line,
+                                          QImage.Format_RGB888)
+            # Мастшабируем в соответствии с размерами экрана
+            try:
+                p = convert_to_qt_format.scaled(
+                    self.label.width(), self.label.height(),
+                    Qt.KeepAspectRatio)
+            except Exception:
+                pass
             self.changePixmap.emit(p)
