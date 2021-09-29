@@ -10,7 +10,7 @@ from modules.camera_views import MainWindowCamera
 
 def my_exception_hook(exctype, value, traceback):
     print(exctype, value, traceback)
-    # sys._excepthook(exctype, value, traceback)
+    sys._excepthook(exctype, value, traceback)
     sys.exit(1)
 
 

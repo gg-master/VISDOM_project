@@ -79,7 +79,7 @@
              <x>0</x>
              <y>0</y>
              <width>278</width>
-             <height>69</height>
+             <height>70</height>
             </rect>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -133,14 +133,14 @@
           </property>
           <layout class="QGridLayout" name="gridLayout_3">
            <item row="1" column="0">
-            <widget class="QPushButton" name="pushButton">
+            <widget class="QPushButton" name="delete_color_btn">
              <property name="text">
               <string>Удалить выбранный</string>
              </property>
             </widget>
            </item>
            <item row="1" column="1">
-            <widget class="QPushButton" name="pushButton_2">
+            <widget class="QPushButton" name="add_new_color_btn">
              <property name="text">
               <string>Создать новый +</string>
              </property>
@@ -149,6 +149,12 @@
            <item row="0" column="0" colspan="2">
             <widget class="QComboBox" name="colorsBox">
              <property name="editable">
+              <bool>true</bool>
+             </property>
+             <property name="currentIndex">
+              <number>-1</number>
+             </property>
+             <property name="frame">
               <bool>true</bool>
              </property>
             </widget>
@@ -537,14 +543,14 @@
              </sizepolicy>
             </property>
             <property name="text">
-             <string>Сохранить</string>
+             <string>Сохранить цвет</string>
             </property>
            </widget>
           </item>
           <item>
            <widget class="QPushButton" name="cancel_btn">
             <property name="text">
-             <string>Отмена</string>
+             <string>Выход</string>
             </property>
            </widget>
           </item>
