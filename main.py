@@ -16,6 +16,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         uic.loadUi(r'data\ui\main_window.ui', self)
+        self.camera = self.color_range_wind = None
         self.initUI()
 
     def initUI(self):
@@ -36,6 +37,7 @@ class MainWindow(QMainWindow):
         from modules.addit_windows import ColorRangeWindow
         self.color_range_wind = ColorRangeWindow(self)
         self.color_range_wind.show()
+
 
 if __name__ == '__main__':
     sys.excepthook = my_exception_hook

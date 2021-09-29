@@ -147,7 +147,7 @@
             </widget>
            </item>
            <item row="0" column="0" colspan="2">
-            <widget class="QComboBox" name="comboBox">
+            <widget class="QComboBox" name="colorsBox">
              <property name="editable">
               <bool>true</bool>
              </property>
@@ -158,6 +158,12 @@
         </item>
         <item>
          <widget class="QGroupBox" name="groupBox">
+          <property name="minimumSize">
+           <size>
+            <width>20</width>
+            <height>0</height>
+           </size>
+          </property>
           <property name="title">
            <string>Начальный диапазон HSV</string>
           </property>
@@ -169,6 +175,9 @@
                <horstretch>0</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
+             </property>
+             <property name="inputMethodHints">
+              <set>Qt::ImhNone</set>
              </property>
              <property name="maximum">
               <number>255</number>
@@ -228,6 +237,12 @@
                <verstretch>0</verstretch>
               </sizepolicy>
              </property>
+             <property name="minimumSize">
+              <size>
+               <width>20</width>
+               <height>0</height>
+              </size>
+             </property>
              <property name="text">
               <string>0</string>
              </property>
@@ -272,6 +287,12 @@
                <horstretch>0</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>20</width>
+               <height>0</height>
+              </size>
              </property>
              <property name="text">
               <string>0</string>
@@ -434,6 +455,12 @@
                <verstretch>0</verstretch>
               </sizepolicy>
              </property>
+             <property name="minimumSize">
+              <size>
+               <width>20</width>
+               <height>0</height>
+              </size>
+             </property>
              <property name="text">
               <string>255</string>
              </property>
@@ -447,6 +474,12 @@
                <verstretch>0</verstretch>
               </sizepolicy>
              </property>
+             <property name="minimumSize">
+              <size>
+               <width>20</width>
+               <height>0</height>
+              </size>
+             </property>
              <property name="text">
               <string>255</string>
              </property>
@@ -459,6 +492,12 @@
                <horstretch>0</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>20</width>
+               <height>0</height>
+              </size>
              </property>
              <property name="text">
               <string>255</string>
