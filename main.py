@@ -1,3 +1,5 @@
+# !/usr/bin/env python
+# -*- coding: utf-8 -*-
 import sys
 from PyQt5 import uic
 from PyQt5.QtWidgets import QWidget, QLabel, QApplication, QMainWindow

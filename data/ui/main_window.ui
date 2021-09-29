@@ -36,6 +36,9 @@
     </item>
     <item>
      <layout class="QVBoxLayout" name="verticalLayout">
+      <property name="rightMargin">
+       <number>10</number>
+      </property>
       <item>
        <layout class="QGridLayout" name="gridLayout">
         <item row="1" column="0">
