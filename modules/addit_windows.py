@@ -7,7 +7,6 @@ from modules.camera_views import ColorRangeCamera
 import json
 
 
-
 class ColorRangeWindow(QWidget):
     def __init__(self, parent, *args, **kwargs):
         super().__init__()
@@ -34,12 +33,15 @@ class ColorRangeWindow(QWidget):
             i.valueChanged.connect(self.sliderChanged)
 
         # При выборе другого элемента проверяем на изменение текущего
-        self.colorsBox.activated[str].connect(self.color_changed_event)
+        # self.colorsBox.activated[str].connect(self.color_changed_event)
 
+        self.colorsBox.view().pressed.connect(self.color_changed_event)
+        print(dir(self.colorsBox.view()))
         self.add_new_color_btn.clicked.connect(self.create_new_color)
 
         # Загружаем все цвета из файла
         self.load_colors()
+        # self.colorsBox.blockSignals(True)
 
     def load_colors(self):
         # Загружаем данные из файла
@@ -96,15 +98,12 @@ class ColorRangeWindow(QWidget):
         name = self.colorsBox.currentText() if name is None else name
         print(name)
         print(hsv_min_max)
-        print(self.colors[name])
+        print(self.colors[name] if name in self.colors else [])
         if name not in self.colors or self.colors[name] != hsv_min_max:
-            self.saved = False
+            self.saved = False if self.saved is not None else None
             return True
         self.saved = True
         return False
-
-    def is_saved(self):
-        return self.saved
 
     def quest_box(self):
         # Окно с подтвердением
@@ -116,6 +115,8 @@ class ColorRangeWindow(QWidget):
         if ret == msg.Yes:
             # Выход без сохранения
             self.saved = True
+        else:
+            self.saved = None
 
     def save_edited_color(self):
         # Сохраниение измененного цвета
@@ -147,19 +148,31 @@ class ColorRangeWindow(QWidget):
             self.colorsBox.setCurrentText(name)
             self.set_color_val(default=True)
 
-    def color_changed_event(self, new_item):
-        last_item = self.colorsBox.property('lastitem')
-
-        # При переключении цвета проверяем имеются ли несохраненные изменения
-        if self.is_color_edited(name=last_item):
-            self.quest_box()
-
-        if self.is_saved():
-            self.colorsBox.setProperty("lastitem", new_item)
-            self.colorsBox.setCurrentText(new_item)
-            self.set_color_val()
-        else:
-            self.colorsBox.setEditText(last_item)
+    def color_changed_event(self, index):
+        item = self.colorsBox.model().itemFromIndex(index)
+        print(item.text())
+        # new_item = self.colorsBox.currentText()
+        # last_item = self.colorsBox.property('lastitem')
+        # if last_item == new_item:
+        #     return
+        #
+        # print(last_item, '->', new_item)
+        #
+        # # При переключении цвета проверяем имеются ли несохраненные изменения
+        # if self.is_color_edited(name=last_item):
+        #     if self.saved is not None:
+        #         self.quest_box()
+        #     elif self.saved is None:
+        #         self.saved = False
+        #
+        # if self.saved is not None and self.saved:
+        #     self.colorsBox.setProperty('lastitem', new_item)
+        #
+        # print(self.saved)
+        # if self.saved:
+        #     self.set_color_val()
+        # elif self.saved is None or not self.saved:
+        #     self.colorsBox.setCurrentText(last_item)
 
     def sliderChanged(self):
         sname = self.sender().objectName()
