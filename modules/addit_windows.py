@@ -44,17 +44,20 @@ class ColorRangeWindow(QWidget):
         self.delete_color_btn.clicked.connect(self.delete_cur_color)
 
         self.confirm_btn.clicked.connect(self.save_edited_color)
+        self.cancel_btn.clicked.connect(self.closeEvent)
 
         # Загружаем все цвета из файла
         self.load_colors()
 
     def load_colors(self):
         # Загружаем данные из файла
-        with open(r'data\settings\colors_settings.json',
-                  encoding='utf-8') as file:
-            self.colors = {i['name']: [i['hsv_min'], i['hsv_max']]
-                           for i in json.load(file)['Colors']}
-
+        try:
+            with open(r'data\settings\colors_settings.json',
+                      encoding='utf-8') as file:
+                self.colors = {i['name']: [i['hsv_min'], i['hsv_max']]
+                               for i in json.load(file)['Colors']}
+        except Exception:
+            self.colors = {'Цвет№_0': [[0, 0, 0], [255, 255, 255]]}
         # Закражаем названия цветов в comboBox
         for i in self.colors.keys():
             self.colorsBox.addItem(i)
@@ -129,20 +132,29 @@ class ColorRangeWindow(QWidget):
         # Сохраниение измененного цвета
         hsv_min_max = self.get_hsv_min_max()
         name = self.colorsBox.currentText()
+        orig_name = self.colorsBox.itemData(
+            self.colorsBox.currentIndex(), Qt.UserRole)
+        if name in self.colors:
+            return
+        if orig_name in self.colors:
+            self.colors.pop(orig_name)
         self.colors[name] = hsv_min_max
 
     def save_colors_to_json(self):
-        # Сохранение все цветов в файл
+        # Сохранение всех цветов в файл
         with open(r'data\settings\colors_settings.json', 'w',
                   encoding='utf-8') as file:
+            # Загружаем все цвета в json файл
             json.dump({'Colors': [{'name': k,
-                                   'hsv_min': v[0], 'hsv_max': v[1]}
-                                  for k, v in self.colors]}, file)
+                               'hsv_min': v[0], 'hsv_max': v[1]}
+                              for k, v in self.colors.items()]}, file,
+                      ensure_ascii=False)
 
     def remove_undetected_cur_item(self):
         # Если новый созданный элемент не был сохранен, то удаляем из списка
         index = self.colorsBox.currentIndex()
         if self.colorsBox.currentText() not in self.colors:
+            # Также проверяем и по оригинальному имени
             orig_name = self.colorsBox.itemData(index, Qt.UserRole)
             if orig_name not in self.colors:
                 self.colorsBox.removeItem(self.colorsBox.findText(
@@ -159,8 +171,10 @@ class ColorRangeWindow(QWidget):
                            msg.Yes | msg.No)
         if ret == msg.Yes:
             # Удаляем выбранный элемент
-            self.colorsBox.removeItem(self.colorsBox.findText(
-                self.colorsBox.currentText()))
+            name_item = self.colorsBox.currentText()
+            self.colorsBox.removeItem(self.colorsBox.findText(name_item))
+            if name_item in self.colors:
+                self.colors.pop(name_item)
 
         # Устанавливаем значения нового выбранного цвета
         self.set_color_val()
@@ -175,10 +189,10 @@ class ColorRangeWindow(QWidget):
             self.remove_undetected_cur_item()
 
             # Создаем новый цвет
-            name = 'Цвет№_0'
-            if name in self.colors:
+            name = 'Цвет№'
+            if any(map(lambda x: name in x, self.colors.keys())):
                 name = "Цвет№_" + str(sorted(map(
-                    lambda x: int(x.split('_')[-1]),
+                    lambda x: abs(int(x.split('_')[-1])),
                     filter(lambda x: 'Цвет№_' in x, self.colors.keys())))[
                                           -1] + 1)
             # Помещаем новый цвет на первое место в списке
@@ -250,6 +264,6 @@ class ColorRangeWindow(QWidget):
             str(self.sender().value()))
         self.set_camera_hsv_colors()
 
-    def closeEvent(self, a0: QCloseEvent) -> None:
-        # TODO Обработка добавленных элементов и их сохранение в json файле
-        super().closeEvent(a0)
+    def closeEvent(self, a0: QCloseEvent = None) -> None:
+        self.save_colors_to_json()
+        super().close()
