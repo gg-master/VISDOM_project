@@ -1,7 +1,7 @@
 from PyQt5 import uic
 from PyQt5.QtWidgets import QWidget, QMessageBox, QComboBox
 from PyQt5.QtGui import QImage, QPixmap, QCloseEvent
-from PyQt5.QtCore import pyqtSlot
+from PyQt5.QtCore import pyqtSlot, Qt
 from modules.camera_views import ColorRangeCamera
 # QComboBox.signalsBlocked()
 import json
@@ -37,8 +37,13 @@ class ColorRangeWindow(QWidget):
 
         # Реагируем на событие раскрытия comboBox.
         self.colorsBox.dropDownMenu.connect(self.colBox_drop_down_action)
+        self.colorsBox.editTextChanged.connect(self.editText_action)
 
         self.add_new_color_btn.clicked.connect(self.create_new_color)
+
+        self.delete_color_btn.clicked.connect(self.delete_cur_color)
+
+        self.confirm_btn.clicked.connect(self.save_edited_color)
 
         # Загружаем все цвета из файла
         self.load_colors()
@@ -134,34 +139,84 @@ class ColorRangeWindow(QWidget):
                                    'hsv_min': v[0], 'hsv_max': v[1]}
                                   for k, v in self.colors]}, file)
 
+    def remove_undetected_cur_item(self):
+        # Если новый созданный элемент не был сохранен, то удаляем из списка
+        index = self.colorsBox.currentIndex()
+        if self.colorsBox.currentText() not in self.colors:
+            orig_name = self.colorsBox.itemData(index, Qt.UserRole)
+            if orig_name not in self.colors:
+                self.colorsBox.removeItem(self.colorsBox.findText(
+                    self.colorsBox.currentText()))
+            else:
+                self.colorsBox.model().item(index).setText(orig_name)
+
+    def delete_cur_color(self):
+        # Окно с подтвердением
+        msg = QMessageBox()
+        ret = msg.question(self, 'Удаление элемента',
+                           "Действительно удалить элемент?\n"
+                           "Это действие нельзя отменить.",
+                           msg.Yes | msg.No)
+        if ret == msg.Yes:
+            # Удаляем выбранный элемент
+            self.colorsBox.removeItem(self.colorsBox.findText(
+                self.colorsBox.currentText()))
+
+        # Устанавливаем значения нового выбранного цвета
+        self.set_color_val()
+
     def create_new_color(self):
         # При создании нового цвета проверяем имеются ли несохраненные данные
         if self.is_color_edited():
             self.quest_box()
 
         if self.saved:
+            # Удаляем элемент, если не был сохранен
+            self.remove_undetected_cur_item()
+
+            # Создаем новый цвет
             name = 'Цвет№_0'
             if name in self.colors:
                 name = "Цвет№_" + str(sorted(map(
                     lambda x: int(x.split('_')[-1]),
                     filter(lambda x: 'Цвет№_' in x, self.colors.keys())))[
                                           -1] + 1)
-            print(name)
+            # Помещаем новый цвет на первое место в списке
             self.colorsBox.insertItem(0, name)
-            self.colorsBox.setCurrentText(name)
-            print(self.colorsBox.findText(self.colorsBox.currentText()))
+            # Выбираем новый цвет
+            self.colorsBox.setCurrentIndex(0)
+            # Сбрасываем на дэфолтные значения диапазоны HSV
             self.set_color_val(default=True)
 
     def set_colBoxEnabled(self, flag):
         # Перебираем все элементы comboBox и устанавливаем им flag
         # как значение доступности
+        color = None
         for i in range(self.colorsBox.count()):
-            if i != self.colorsBox.currentIndex():
+            if self.colorsBox.itemText(i) in self.colors:
                 self.colorsBox.model().item(i).setEnabled(flag)
+            elif color is None:
+                color = self.colorsBox.itemText(i)
+
+        # Обрабатываем случай с автоматическим изменением названия элемента
+        if color is not None:
+            self.colorsBox.setCurrentText(color)
+
+    def editText_action(self, text):
+        # Устанавливаем текст из current элемента в список QComboBox
+        # Получение индекса current элемента
+        index = self.colorsBox.currentIndex()
+
+        # По индексе определяем нужный элемент и изменяем его имя в списке
+        self.colorsBox.model().item(index).setText(text)
+
+        # Сохраняем оригинальное имя
+        if self.colorsBox.itemData(index, Qt.UserRole) is None:
+            text = self.colorsBox.itemText(index)
+            self.colorsBox.setItemData(index, text, Qt.UserRole)
 
     def colBox_drop_down_action(self):
         # При раскрытии списка узнаем был ли редактировн цвет
-
         if self.is_color_edited():
             # Если был редактирован, то предупреждаем пользователя
             self.set_colBoxEnabled(False)
@@ -169,9 +224,9 @@ class ColorRangeWindow(QWidget):
         # Если же цвет сохранен, то мы можем переключаться между
         # другими цветами
         if self.saved:
-            if self.colorsBox.currentText() not in self.colors:
-                self.colorsBox.removeItem(self.colorsBox.findText(
-                    self.colorsBox.currentText()))
+            # Если элемент не найден в списке сохраненных цветов - удаляем
+            self.remove_undetected_cur_item()
+
             self.set_color_val()
             self.set_colBoxEnabled(True)
 
