@@ -1,10 +1,12 @@
 from PyQt5.Qt import *
 from PyQt5.QtWidgets import QComboBox
 from PyQt5.QtGui import QMouseEvent
-from PyQt5.QtCore import QEvent
+from PyQt5.QtCore import pyqtSignal, QEvent
 
 
 class ColorRangeComboBox(QComboBox):
+    dropDownMenu = pyqtSignal()
+
     def __init__(self, parent=None):
         QComboBox.__init__(self, parent)
         self.installEventFilter(self)
@@ -13,9 +15,6 @@ class ColorRangeComboBox(QComboBox):
         if event.type() == QEvent.MouseButtonPress:
             mouse_event = QMouseEvent(event)
             if mouse_event.buttons() == Qt.LeftButton:
-                print('DOne')
+                self.dropDownMenu.emit()
                 return super().eventFilter(obj, event)
         return False
-
-    # def activated(self, index: int) -> None:
-    #     if

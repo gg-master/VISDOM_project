@@ -32,16 +32,16 @@ class ColorRangeWindow(QWidget):
                   self.end_val_slider]:
             i.valueChanged.connect(self.sliderChanged)
 
-        # При выборе другого элемента проверяем на изменение текущего
-        # self.colorsBox.activated[str].connect(self.color_changed_event)
+        # При переключении цвета загружаем данные о цвете
+        self.colorsBox.activated[str].connect(self.color_changed_action)
 
-        self.colorsBox.view().pressed.connect(self.color_changed_event)
-        print(dir(self.colorsBox.view()))
+        # Реагируем на событие раскрытия comboBox.
+        self.colorsBox.dropDownMenu.connect(self.colBox_drop_down_action)
+
         self.add_new_color_btn.clicked.connect(self.create_new_color)
 
         # Загружаем все цвета из файла
         self.load_colors()
-        # self.colorsBox.blockSignals(True)
 
     def load_colors(self):
         # Загружаем данные из файла
@@ -65,7 +65,10 @@ class ColorRangeWindow(QWidget):
         if default:
             color = [[0, 0, 0], [255, 255, 255]]
         else:
-            color = self.colors[self.colorsBox.currentText()]
+            cur_col = self.colorsBox.currentText()
+            if cur_col not in self.colors:
+                return
+            color = self.colors[cur_col]
 
         # Перебирая слайдеры и лэйблы устаналиваем соотвествующие значения
         for n, (slider, label) in enumerate(
@@ -93,14 +96,15 @@ class ColorRangeWindow(QWidget):
     def set_camera_hsv_colors(self):
         self.camera.set_hmin_hmax(*self.get_hsv_min_max())
 
-    def is_color_edited(self, name=None) -> bool:
+    def is_color_edited(self) -> bool:
+        # Получаем название цвета и его сохраненное значание
+        name = self.colorsBox.currentText()
         hsv_min_max = self.get_hsv_min_max()
-        name = self.colorsBox.currentText() if name is None else name
-        print(name)
-        print(hsv_min_max)
-        print(self.colors[name] if name in self.colors else [])
+
+        # Если подобного цвета нет или значения цвета отредактированы,
+        # то считаем что цвет изменен
         if name not in self.colors or self.colors[name] != hsv_min_max:
-            self.saved = False if self.saved is not None else None
+            self.saved = False
             return True
         self.saved = True
         return False
@@ -115,8 +119,6 @@ class ColorRangeWindow(QWidget):
         if ret == msg.Yes:
             # Выход без сохранения
             self.saved = True
-        else:
-            self.saved = None
 
     def save_edited_color(self):
         # Сохраниение измененного цвета
@@ -136,7 +138,8 @@ class ColorRangeWindow(QWidget):
         # При создании нового цвета проверяем имеются ли несохраненные данные
         if self.is_color_edited():
             self.quest_box()
-        else:
+
+        if self.saved:
             name = 'Цвет№_0'
             if name in self.colors:
                 name = "Цвет№_" + str(sorted(map(
@@ -144,35 +147,47 @@ class ColorRangeWindow(QWidget):
                     filter(lambda x: 'Цвет№_' in x, self.colors.keys())))[
                                           -1] + 1)
             print(name)
-            self.colorsBox.addItem(name)
+            self.colorsBox.insertItem(0, name)
             self.colorsBox.setCurrentText(name)
+            print(self.colorsBox.findText(self.colorsBox.currentText()))
             self.set_color_val(default=True)
 
-    def color_changed_event(self, index):
-        item = self.colorsBox.model().itemFromIndex(index)
-        print(item.text())
-        # new_item = self.colorsBox.currentText()
-        # last_item = self.colorsBox.property('lastitem')
-        # if last_item == new_item:
-        #     return
-        #
+    def set_colBoxEnabled(self, flag):
+        # Перебираем все элементы comboBox и устанавливаем им flag
+        # как значение доступности
+        for i in range(self.colorsBox.count()):
+            if i != self.colorsBox.currentIndex():
+                self.colorsBox.model().item(i).setEnabled(flag)
+
+    def colBox_drop_down_action(self):
+        # При раскрытии списка узнаем был ли редактировн цвет
+
+        if self.is_color_edited():
+            # Если был редактирован, то предупреждаем пользователя
+            self.set_colBoxEnabled(False)
+            self.quest_box()
+        # Если же цвет сохранен, то мы можем переключаться между
+        # другими цветами
+        if self.saved:
+            if self.colorsBox.currentText() not in self.colors:
+                self.colorsBox.removeItem(self.colorsBox.findText(
+                    self.colorsBox.currentText()))
+            self.set_color_val()
+            self.set_colBoxEnabled(True)
+
+    def color_changed_action(self, new_item):
+        # При изменении выбранного цвета проверяем, чтобы предыдущий и
+        # выбранный цвет не совпадали
+        last_item = self.colorsBox.property('lastitem')
+        self.colorsBox.setProperty('lastitem', new_item)
+
+        if last_item == new_item:
+            # Если элементы совпали, то выходим
+            return
         # print(last_item, '->', new_item)
-        #
-        # # При переключении цвета проверяем имеются ли несохраненные изменения
-        # if self.is_color_edited(name=last_item):
-        #     if self.saved is not None:
-        #         self.quest_box()
-        #     elif self.saved is None:
-        #         self.saved = False
-        #
-        # if self.saved is not None and self.saved:
-        #     self.colorsBox.setProperty('lastitem', new_item)
-        #
-        # print(self.saved)
-        # if self.saved:
-        #     self.set_color_val()
-        # elif self.saved is None or not self.saved:
-        #     self.colorsBox.setCurrentText(last_item)
+
+        # Переключаем цвет
+        self.set_color_val()
 
     def sliderChanged(self):
         sname = self.sender().objectName()
