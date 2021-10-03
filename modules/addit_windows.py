@@ -1,16 +1,18 @@
-from PyQt5 import uic
-from PyQt5.QtWidgets import QWidget, QMessageBox, QComboBox
-from PyQt5.QtGui import QImage, QPixmap, QCloseEvent
-from PyQt5.QtCore import pyqtSlot, Qt
-from modules.camera_views import ColorRangeCamera
-# QComboBox.signalsBlocked()
 import json
+
+from PyQt5 import uic
+from PyQt5.QtCore import pyqtSlot, Qt
+from PyQt5.QtWidgets import QWidget, QMessageBox
+from PyQt5.QtGui import QImage, QPixmap, QCloseEvent
+
+from modules.camera_views import ColorRangeCamera
+from modules.tools import abspath
 
 
 class ColorRangeWindow(QWidget):
     def __init__(self, parent, *args, **kwargs):
         super().__init__()
-        uic.loadUi(r'data\ui\color_range_settings_window.ui', self)
+        uic.loadUi(abspath(r'data\ui\color_range_settings_window.ui'), self)
         self.parent = parent
         self.camera = self.colors = None
         self.saved = False
@@ -52,13 +54,13 @@ class ColorRangeWindow(QWidget):
     def load_colors(self):
         # Загружаем данные из файла
         try:
-            with open(r'data\settings\colors_settings.json',
+            with open(abspath(r'data\settings\colors_settings.json'),
                       encoding='utf-8') as file:
                 self.colors = {i['name']: [i['hsv_min'], i['hsv_max']]
                                for i in json.load(file)['Colors']}
         except Exception:
             self.colors = {'Цвет№_0': [[0, 0, 0], [255, 255, 255]]}
-        # Закражаем названия цветов в comboBox
+        # Загружаем названия цветов в comboBox
         for i in self.colors.keys():
             self.colorsBox.addItem(i)
 
@@ -93,6 +95,7 @@ class ColorRangeWindow(QWidget):
             label.setText(str(color[1][n]))
 
     def get_hsv_min_max(self):
+        # Получить диапазон цветов из формы
         return [
             [self.st_hue_slider.value(), self.st_sat_slider.value(),
              self.st_val_slider.value()],
@@ -142,12 +145,12 @@ class ColorRangeWindow(QWidget):
 
     def save_colors_to_json(self):
         # Сохранение всех цветов в файл
-        with open(r'data\settings\colors_settings.json', 'w',
+        with open(abspath(r'data\settings\colors_settings.json'), 'w',
                   encoding='utf-8') as file:
             # Загружаем все цвета в json файл
             json.dump({'Colors': [{'name': k,
-                               'hsv_min': v[0], 'hsv_max': v[1]}
-                              for k, v in self.colors.items()]}, file,
+                                   'hsv_min': v[0], 'hsv_max': v[1]}
+                                  for k, v in self.colors.items()]}, file,
                       ensure_ascii=False)
 
     def remove_undetected_cur_item(self):
@@ -189,12 +192,15 @@ class ColorRangeWindow(QWidget):
             self.remove_undetected_cur_item()
 
             # Создаем новый цвет
-            name = 'Цвет№'
+            name = 'Цвет№_'
             if any(map(lambda x: name in x, self.colors.keys())):
                 name = "Цвет№_" + str(sorted(map(
                     lambda x: abs(int(x.split('_')[-1])),
                     filter(lambda x: 'Цвет№_' in x, self.colors.keys())))[
                                           -1] + 1)
+            else:
+                name += '0'
+
             # Помещаем новый цвет на первое место в списке
             self.colorsBox.insertItem(0, name)
             # Выбираем новый цвет
@@ -265,5 +271,10 @@ class ColorRangeWindow(QWidget):
         self.set_camera_hsv_colors()
 
     def closeEvent(self, a0: QCloseEvent = None) -> None:
+        # Сохраняем цвета в json
         self.save_colors_to_json()
+
+        # Загружаем у главного окна новые цвета
+        self.parent.load_colors()
+
         super().close()

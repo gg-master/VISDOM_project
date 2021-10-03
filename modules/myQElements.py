@@ -4,7 +4,7 @@ from PyQt5.QtGui import QMouseEvent
 from PyQt5.QtCore import pyqtSignal, QEvent
 
 
-class ColorRangeComboBox(QComboBox):
+class ComboBoxPDrDwSi(QComboBox):
     dropDownMenu = pyqtSignal()
 
     def __init__(self, parent=None):

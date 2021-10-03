@@ -23,7 +23,7 @@
    </sizepolicy>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string>Настройка цветов</string>
   </property>
   <layout class="QHBoxLayout" name="horizontalLayout_2">
    <item>
@@ -147,7 +147,7 @@
             </widget>
            </item>
            <item row="0" column="0" colspan="2">
-            <widget class="ColorRangeComboBox" name="colorsBox">
+            <widget class="ComboBoxPDrDwSi" name="colorsBox">
              <property name="editable">
               <bool>true</bool>
              </property>
@@ -578,7 +578,7 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>ColorRangeComboBox</class>
+   <class>ComboBoxPDrDwSi</class>
    <extends>QComboBox</extends>
    <header>modules.myQElements</header>
   </customwidget>
