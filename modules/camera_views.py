@@ -61,8 +61,6 @@ class MainWindowCamera(QThread):
             except Exception:
                 pass
 
-
-
     def get_img_with_objects(self, img):
         img = cv2.flip(img, 1)  # отражение кадра вдоль оси Y
         hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
@@ -83,8 +81,11 @@ class MainWindowCamera(QThread):
                 x = int(dM10 / dArea)
                 y = int(dM01 / dArea)
 
-                # Добавляем новые координаты для точки определенного цвета
-                self.parent().analyzer.add_next_position(name, (x, y))
+                try:
+                    # Добавляем новые координаты для точки определенного цвета
+                    self.parent().analyzer.add_next_position(name, (x, y))
+                except Exception:
+                    pass
 
                 cv2.circle(img, (x, y), 5, color_yellow, 2)
                 cv2.putText(img, f"{x}-{y}", (x + 10, y - 10),

@@ -63,10 +63,14 @@ class MainWindow(QMainWindow):
 
     def set_current_colors(self):
         # Устанавливаем выбранные цвета в распознавание камеры
-        self.camera.set_current_colors(
-            {i: self.colors[i] for i in
-             map(lambda x: x.currentText(),
-                 [self.curr_color_1, self.curr_color_2]) if i in self.colors})
+        current_colors = {i: self.colors[i] for i in
+                          map(lambda x: x.currentText(),
+                              [self.curr_color_1, self.curr_color_2])
+                          if i in self.colors}
+        self.camera.set_current_colors(current_colors)
+        self.analyzer.update_colors({
+            num: {name: current_colors[name]}
+            for num, name in enumerate(current_colors)})
 
     def update_colors_in_comboBox(self):
         # Предварительно отчищаем от всех значений
