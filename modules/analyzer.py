@@ -7,8 +7,10 @@ class Analyser:
         self.parent = parent
         self.graph = Graph(self)
 
+        self.colors = {}
+
     def add_next_position(self, name, position):
-        print(name, position)
+        self.colors[name] = position
 
 
 class Graph:
@@ -47,6 +49,7 @@ class Graph:
         else:
             curve = self.curves[-1]
         self.data[i + 1, 0] = now - self.startTime
-        self.data[i + 1, 1] = np.random.normal()
+        # self.data[i + 1, 1] = np.random.normal()
+        self.data[i + 1, 1] = self.analyzer.colors['Красный'][1] if 'Красный' in self.analyzer.colors else 0
         curve.setData(x=self.data[:i + 2, 0], y=self.data[:i + 2, 1])
         self.ptr += 1
