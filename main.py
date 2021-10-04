@@ -68,9 +68,7 @@ class MainWindow(QMainWindow):
                               [self.curr_color_1, self.curr_color_2])
                           if i in self.colors}
         self.camera.set_current_colors(current_colors)
-        self.analyzer.update_colors({
-            num: {name: current_colors[name]}
-            for num, name in enumerate(current_colors)})
+        self.analyzer.update_colors(current_colors)
 
     def update_colors_in_comboBox(self):
         # Предварительно отчищаем от всех значений
