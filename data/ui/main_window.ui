@@ -333,8 +333,9 @@
    </widget>
    <widget class="QMenu" name="open_graph_inWindow">
     <property name="title">
-     <string>Открыть график</string>
+     <string>Окна</string>
     </property>
+    <addaction name="open_graph_inWindow_2"/>
    </widget>
    <addaction name="Settings"/>
    <addaction name="open_graph_inWindow"/>
@@ -348,6 +349,11 @@
   <action name="server_settings">
    <property name="text">
     <string>Настройки сервера</string>
+   </property>
+  </action>
+  <action name="open_graph_inWindow_2">
+   <property name="text">
+    <string>Открыть график</string>
    </property>
   </action>
  </widget>

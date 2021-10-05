@@ -23,7 +23,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         uic.loadUi(r'data\ui\main_window.ui', self)
-        self.camera = self.color_range_wind = None
+        self.camera = self.color_range_wind = self.graph_window = None
 
         self.analyzer = Analyser(self)
 
@@ -43,6 +43,9 @@ class MainWindow(QMainWindow):
         # Добавляем действия для событий
         self.color_range_settings.triggered.connect(
             self.open_color_range_window)
+
+        self.open_graph_inWindow.triggered.connect(
+            self.open_graph_in_window)
 
         for i in [self.curr_color_1, self.curr_color_2]:
             # Если активировано выпадающее меню, то убираем выбранные цвета
@@ -67,8 +70,12 @@ class MainWindow(QMainWindow):
                           map(lambda x: x.currentText(),
                               [self.curr_color_1, self.curr_color_2])
                           if i in self.colors}
+        self.analyzer.update_colors(
+            {n: {'name': i if i else None} for n, i in enumerate(
+                map(lambda x: x.currentText(),
+                    [self.curr_color_1, self.curr_color_2]), start=1)})
+
         self.camera.set_current_colors(current_colors)
-        self.analyzer.update_colors(current_colors)
 
     def update_colors_in_comboBox(self):
         # Предварительно отчищаем от всех значений
@@ -96,6 +103,11 @@ class MainWindow(QMainWindow):
         from modules.addit_windows import ColorRangeWindow
         self.color_range_wind = ColorRangeWindow(self)
         self.color_range_wind.show()
+
+    def open_graph_in_window(self):
+        from modules.addit_windows import GraphWindow
+        self.graph_window = GraphWindow(self)
+        self.graph_window.show()
 
 
 if __name__ == '__main__':

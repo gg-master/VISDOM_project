@@ -7,6 +7,7 @@ from PyQt5.QtGui import QImage, QPixmap, QCloseEvent
 
 from modules.camera_views import ColorRangeCamera
 from modules.tools import abspath
+from modules.analyzer import Graph
 
 
 class ColorRangeWindow(QWidget):
@@ -137,10 +138,10 @@ class ColorRangeWindow(QWidget):
         name = self.colorsBox.currentText()
         orig_name = self.colorsBox.itemData(
             self.colorsBox.currentIndex(), Qt.UserRole)
-        if name in self.colors:
-            return
+
         if orig_name in self.colors:
             self.colors.pop(orig_name)
+
         self.colors[name] = hsv_min_max
 
     def save_colors_to_json(self):
@@ -277,4 +278,21 @@ class ColorRangeWindow(QWidget):
         # Загружаем у главного окна новые цвета
         self.parent.load_colors()
 
+        super().close()
+
+
+class GraphWindow(QWidget):
+    def __init__(self, parent):
+        super().__init__()
+        uic.loadUi(abspath(r'data\ui\graph_window.ui'), self)
+
+        self.parent = parent
+
+        self.graph = Graph(parent.analyzer, self.graphicsView, orig=False)
+
+        # Добавляем в список графиков, чтобы одновременно обновлять кривые
+        self.parent.analyzer.add_graph(self.graph)
+
+    def closeEvent(self, a0: QCloseEvent) -> None:
+        self.parent.analyzer.remove_graph(self.graph)
         super().close()

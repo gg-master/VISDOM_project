@@ -7,89 +7,174 @@ class Analyser:
     def __init__(self, parent):
         self.parent = parent
 
-        self.colors = dict()
+        self.colors = {}
 
-        self.graph = Graph(self)
+        self.graphics = [Graph(self, self.parent.graphicsView)]
 
     def add_next_position(self, name, position):
-        # Если цвета раньше не было в наборе, то создаем новую кривую для него
-        if name not in self.colors:
-            self.colors[name] = position
-            self.graph.reload_curves()
-        else:
-            # Иначе просто обновляем координаты
-            self.colors[name] = position
+        # Полученный цвет загружаем в соответствующий блок
+        self.colors[self.get_key_by_name(name)]['pos'] = position
 
     def update_colors(self, new_colors: dict):
-        # Все цвета, которые не вошли в новый набор цветов удаляются
-        print(self.colors, end=' ')
-        self.colors = {name: self.colors[name]
-                       for name in filter(
-                lambda x: x in new_colors, self.colors.keys())}
-        # Перезагружаем кривые графика, что остановить отрисовку,
-        # если нет нужного цвета
-        self.graph.reload_curves()
-        print(self.colors, new_colors)
+        # Обновляем набор цветов
+        self.colors = new_colors
+        # Перезагружаем кривые графиков
+        [graph.reload_curves() for graph in self.graphics]
+
+    def get_key_by_name(self, name) -> int:
+        for k, v in self.colors.items():
+            if v['name'] == name:
+                return k
+        return -1
+
+    def add_graph(self, graph):
+        self.graphics.append(graph)
+
+    def remove_graph(self, graph):
+        self.graphics.remove(graph)
 
 
 class Graph:
-    def __init__(self, parent):
+    def __init__(self, analyzer, graphics_view, orig=True):
         # np.seterr(all='ignore')
-        self.analyzer = parent
+        # Объект анализатора, из которого получаем координаты
+        self.analyzer = analyzer
+
+        # Флаг оригинальстости графика
+        self.orig = orig
 
         self.startTime = pg.ptime.time()
 
-        self.pl = parent.parent.graphicsView.addPlot()
+        # Объект, на котором будет рисоваться график
+        self.pl = graphics_view.addPlot()
+
         self.pl.setLabel('bottom', 'Time', 's')
-        self.pl.setXRange(0, 20)
 
-        self.curves = []
-        self.reload_curves()
+        # Словарь с пронумерованными кривыми
+        self.curves = {}
 
-        self.data = np.empty((100, 3))
+        # Кривые, который уже отображались на графике
+        self.saved_curves = {}
 
+        # Максимально количество данных для сохранения
+        self.maxChunks = 100
+        self.save_full_data = False
+
+        # Массив данных, заполненный нулями для двух кривых.
+        self.data = np.zeros((self.maxChunks, 3))
+
+        # Счетчик для данных. Изменяется во времени
         self.ptr = 0
 
         self.timer = pg.QtCore.QTimer()
         self.timer.timeout.connect(self.update)
         self.timer.start(50)
 
+        if not orig:
+            orig = self.analyzer.graphics[0]
+            self.startTime = orig.startTime
+
     def reload_curves(self):
-        print(self.analyzer.colors)
-        for num, name in enumerate(self.analyzer.colors.keys()
-                                   if len(self.curves) >= 2 else range(2),
-                                   start=1):
-            if len(self.curves) < num:
-                self.curves.append(
-                    self.pl.plot(pen=(255, 255, 255)))
-            else:
-                self.curves[num].setPen(
-                    self.get_rgb_by_name(self.analyzer.colors[name]))
-        print(self.curves)
+        # Сохраняем объекты кривых, для последующего редактирования
+        self.saved_curves.update(self.curves.copy())
+
+        # Очищаем словарь с кривыми
+        self.curves.clear()
+
+        # Заполняем словарь новыми данными
+        self.curves = {num: {'name': val['name'], 'curve': self.pl.plot(
+            pen=self.get_rgb_by_name(val['name']))}
+                       for num, val in self.analyzer.colors.items()
+                       if val['name'] is not None}
+
+        self.check_saved_curves()
+
+    def check_saved_curves(self):
+        if len(self.saved_curves) <= 1:
+            return
+
+        # Если новый цвет кривой того же номера не совпадает со старым,
+        # то перекрашиваем кривую, у которой совпал цвет
+        for k, v in self.curves.items():
+            if v['name'] != self.saved_curves[k]['name']:
+                num = self.get_key_by_name(v['name'], self.saved_curves)
+                if num > 0:
+                    curve = self.saved_curves[num]['curve']
+
+                    # Устанавливаем кривой белый цвет и отрисовываем
+                    curve.setPen((255, 255, 255))
+                    curve.setData(x=self.data[:self.ptr, 0],
+                                  y=self.data[:self.ptr, num])
 
     def update(self):
         now = pg.ptime.time()
-        self.ptr += 1
-        # print(self.data.shape[0], self.ptr)
 
-        # Увеличиваем размерность массива данных
+        # Увеличиваем счетчик
+        self.ptr += 1
+
+        # Увеличиваем размерность массива данных при переполнении
         if self.ptr >= self.data.shape[0]:
             tmp = self.data
-            self.data = np.empty((self.data.shape[0] * 2, 3))
-            self.data[:tmp.shape[0]] = tmp
 
+            # Если не сохраняем весь массив
+            if not self.save_full_data:
+                # Обвноялвяем массив
+                self.data = np.zeros((self.data.shape[0], 3))
+
+                # Перемащаем в него копию последних 1/4 значений
+                self.data[:tmp.shape[0] // 4] = tmp[-tmp.shape[0] // 4:]
+
+                # Перемещаем счетчик
+                self.ptr = tmp.shape[0] // 4
+
+                # Очищаем график от старых значений
+                if self.curves:
+                    self.pl.clear()
+                    self.curves.clear()
+                    self.saved_curves.clear()
+                    self.reload_curves()
+
+            else:
+                # Увеличиваем массив вдвое
+                self.data = np.zeros((self.data.shape[0] * 2, 3))
+                self.data[:tmp.shape[0]] = tmp
+
+        # Указываем координату времени
         self.data[self.ptr, 0] = now - self.startTime
-        # self.data[i + 1, 1] = np.random.normal()
-        for num, val in enumerate(self.curves, start=1):
-            y = list(self.analyzer.colors.values())[num - 1][0] \
-                if num <= len(self.analyzer.colors) else 0
-            # print(f'{num} -- {y}')
-            self.data[self.ptr, num] = y
-            self.curves[num - 1].setData(x=self.data[:self.ptr, 0],
-                                         y=self.data[:self.ptr, num])
+
+        # Перебираем цвета, и отображаем их координаты на графике
+        for num, val in self.analyzer.colors.items():
+            if num not in self.curves:
+                continue
+
+            if not self.orig:
+                orig = self.analyzer.graphics[0]
+                self.data = orig.data
+                self.ptr = orig.ptr
+
+            else:
+                # Устанавливаем координату Y цвета
+                y = val['pos'][0] if 'pos' in val else 0
+                self.data[self.ptr, num] = y
+
+            # Отрисовываем на графике
+            self.curves[num]['curve'].setData(x=self.data[:self.ptr, 0],
+                                              y=self.data[:self.ptr, num])
 
     def get_rgb_by_name(self, name):
+        """
+        Переводим цвет по названию в rbg формат
+        :param name: Имя цвета
+        :return: rbg-
+        """
         hsv_min_max = self.analyzer.parent.colors[name]
         v1, v2 = hsv_min_max
         return list(map(lambda x: x * 100, colorsys.hsv_to_rgb(
             (v1[0] + v2[0]) / 200, 1, 1)))
+
+    @staticmethod
+    def get_key_by_name(name, dictionary) -> int:
+        for k, v in dictionary.items():
+            if v['name'] == name:
+                return k
+        return -1
