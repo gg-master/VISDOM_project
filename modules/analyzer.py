@@ -1,14 +1,21 @@
+import colorsys
 import numpy as np
 import pyqtgraph as pg
-import colorsys
+
+from PyQt5.QtCore import pyqtSignal, QObject
 
 
-class Analyser:
+class Analyser(QObject):
+    newCoordinatesSignal = pyqtSignal()
+
     def __init__(self, parent):
+        super().__init__(parent)
         self.parent = parent
 
         self.colors = {}
 
+        # Массив с данными, а также таймер срабатывания регистрации точек в
+        # массиве находятся в главном графике, который создается здесь.
         self.graphics = [Graph(self, self.parent.graphicsView)]
 
     def add_next_position(self, name, position):
@@ -32,6 +39,10 @@ class Analyser:
 
     def remove_graph(self, graph):
         self.graphics.remove(graph)
+
+    def get_last_coordinates(self):
+        main_graph = self.graphics[0]
+        return main_graph.data[main_graph.ptr][1:]
 
 
 class Graph:
@@ -57,19 +68,23 @@ class Graph:
         self.saved_curves = {}
 
         # Максимально количество данных для сохранения
-        self.maxChunks = 100
+        self.maxChunks = 300
         self.save_full_data = False
 
         # Массив данных, заполненный нулями для двух кривых.
-        self.data = np.zeros((self.maxChunks, 3))
+        self.data = np.zeros((self.maxChunks, 5))
 
         # Счетчик для данных. Изменяется во времени
         self.ptr = 0
 
+        # Таймер, который будет срабатывать каждые 50 миллисекунд,
+        # и обновлять данные в графике
         self.timer = pg.QtCore.QTimer()
         self.timer.timeout.connect(self.update)
         self.timer.start(50)
 
+        # Если создается график в окне, и нам необходимо в нем отображать
+        # данные главного графика, копируем значения из главного графика
         if not orig:
             orig = self.analyzer.graphics[0]
             self.startTime = orig.startTime
@@ -119,7 +134,7 @@ class Graph:
             # Если не сохраняем весь массив
             if not self.save_full_data:
                 # Обвноялвяем массив
-                self.data = np.zeros((self.data.shape[0], 3))
+                self.data = np.zeros((self.data.shape[0], 5))
 
                 # Перемащаем в него копию последних 1/4 значений
                 self.data[:tmp.shape[0] // 4] = tmp[-tmp.shape[0] // 4:]
@@ -136,7 +151,7 @@ class Graph:
 
             else:
                 # Увеличиваем массив вдвое
-                self.data = np.zeros((self.data.shape[0] * 2, 3))
+                self.data = np.zeros((self.data.shape[0] * 2, 5))
                 self.data[:tmp.shape[0]] = tmp
 
         # Указываем координату времени
@@ -155,17 +170,21 @@ class Graph:
             else:
                 # Устанавливаем координату Y цвета
                 y = val['pos'][0] if 'pos' in val else 0
+                x = val['pos'][1] if 'pos' in val else 0
                 self.data[self.ptr, num] = y
-
+                self.data[self.ptr, num + 2] = x
             # Отрисовываем на графике
             self.curves[num]['curve'].setData(x=self.data[:self.ptr, 0],
                                               y=self.data[:self.ptr, num])
+
+        # Сигналем в анализаторе о том, что появились новые координаты
+        self.analyzer.newCoordinatesSignal.emit()
 
     def get_rgb_by_name(self, name):
         """
         Переводим цвет по названию в rbg формат
         :param name: Имя цвета
-        :return: rbg-
+        :return: rbg-tuple
         """
         hsv_min_max = self.analyzer.parent.colors[name]
         v1, v2 = hsv_min_max

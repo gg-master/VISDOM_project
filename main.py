@@ -1,16 +1,16 @@
 # !/usr/bin/env python
 # -*- coding: utf-8 -*-
-import json
 import sys
+import json
 
 from PyQt5 import uic
-from PyQt5.QtWidgets import QWidget, QLabel, QApplication, QMainWindow
-from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtCore import pyqtSlot
+from PyQt5.QtGui import QImage, QPixmap
+from PyQt5.QtWidgets import QApplication, QMainWindow
 
-from modules.camera_views import MainWindowCamera
 from modules.tools import abspath
 from modules.analyzer import Analyser
+from modules.camera_views import MainWindowCamera
 
 
 def my_exception_hook(exctype, value, traceback):
@@ -26,6 +26,7 @@ class MainWindow(QMainWindow):
         self.camera = self.color_range_wind = self.graph_window = None
 
         self.analyzer = Analyser(self)
+        self.analyzer.newCoordinatesSignal.connect(self.set_coord_in_label)
 
         # Цвета, доступные для выбора
         self.colors = {}
@@ -93,6 +94,15 @@ class MainWindow(QMainWindow):
         # Устанавливаем все зачения, которые не выбраны в другом comboBox
         for i in filter(lambda x: x != sec_col, self.colors.keys()):
             self.sender().addItem(i)
+
+    def set_coord_in_label(self):
+        # Получаем последние координаты и устанавливаем их в лэйблы
+        y1, y2, x1, x2 = map(lambda x: str(int(x)),
+                             self.analyzer.get_last_coordinates())
+        self.val_x1.setText(x1)
+        self.val_x2.setText(x2)
+        self.val_y1.setText(y1)
+        self.val_y2.setText(y2)
 
     @pyqtSlot(QImage)
     def setImage(self, image):

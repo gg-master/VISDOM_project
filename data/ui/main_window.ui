@@ -58,6 +58,11 @@
             <height>20</height>
            </size>
           </property>
+          <property name="font">
+           <font>
+            <pointsize>10</pointsize>
+           </font>
+          </property>
           <property name="text">
            <string>Y1:</string>
           </property>
@@ -77,6 +82,11 @@
             <height>20</height>
            </size>
           </property>
+          <property name="font">
+           <font>
+            <pointsize>10</pointsize>
+           </font>
+          </property>
           <property name="text">
            <string>X1:</string>
           </property>
@@ -90,6 +100,11 @@
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
+          <property name="font">
+           <font>
+            <pointsize>10</pointsize>
+           </font>
+          </property>
           <property name="text">
            <string>X2:</string>
           </property>
@@ -97,6 +112,11 @@
         </item>
         <item row="0" column="1">
          <widget class="QLabel" name="val_x1">
+          <property name="font">
+           <font>
+            <pointsize>10</pointsize>
+           </font>
+          </property>
           <property name="text">
            <string>0</string>
           </property>
@@ -104,13 +124,23 @@
         </item>
         <item row="0" column="3">
          <widget class="QLabel" name="val_x2">
+          <property name="font">
+           <font>
+            <pointsize>10</pointsize>
+           </font>
+          </property>
           <property name="text">
            <string>0</string>
           </property>
          </widget>
         </item>
         <item row="1" column="1">
-         <widget class="QLabel" name="val_y2_2">
+         <widget class="QLabel" name="val_y1">
+          <property name="font">
+           <font>
+            <pointsize>10</pointsize>
+           </font>
+          </property>
           <property name="text">
            <string>0</string>
           </property>
@@ -124,6 +154,11 @@
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
+          <property name="font">
+           <font>
+            <pointsize>10</pointsize>
+           </font>
+          </property>
           <property name="text">
            <string>Y2:</string>
           </property>
@@ -131,6 +166,11 @@
         </item>
         <item row="1" column="3">
          <widget class="QLabel" name="val_y2">
+          <property name="font">
+           <font>
+            <pointsize>10</pointsize>
+           </font>
+          </property>
           <property name="text">
            <string>0</string>
           </property>
@@ -158,6 +198,11 @@
        <layout class="QHBoxLayout" name="horizontalLayout">
         <item>
          <widget class="QGroupBox" name="groupBox_2">
+          <property name="font">
+           <font>
+            <pointsize>10</pointsize>
+           </font>
+          </property>
           <property name="title">
            <string>Цвет №1</string>
           </property>
@@ -166,6 +211,11 @@
             <widget class="ComboBoxPDrDwSi" name="curr_color_1">
              <property name="enabled">
               <bool>true</bool>
+             </property>
+             <property name="font">
+              <font>
+               <pointsize>10</pointsize>
+              </font>
              </property>
              <property name="editable">
               <bool>false</bool>
@@ -183,12 +233,22 @@
         </item>
         <item>
          <widget class="QGroupBox" name="groupBox_3">
+          <property name="font">
+           <font>
+            <pointsize>10</pointsize>
+           </font>
+          </property>
           <property name="title">
            <string>Цвет №2</string>
           </property>
           <layout class="QHBoxLayout" name="horizontalLayout_3">
            <item>
             <widget class="ComboBoxPDrDwSi" name="curr_color_2">
+             <property name="font">
+              <font>
+               <pointsize>10</pointsize>
+              </font>
+             </property>
              <property name="placeholderText">
               <string>Выберите цвет</string>
              </property>
@@ -217,6 +277,11 @@
       </item>
       <item>
        <widget class="QGroupBox" name="groupBox">
+        <property name="font">
+         <font>
+          <pointsize>10</pointsize>
+         </font>
+        </property>
         <property name="title">
          <string>Настройки распознавания дыхания</string>
         </property>

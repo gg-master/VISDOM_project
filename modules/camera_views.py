@@ -85,7 +85,7 @@ class MainWindowCamera(QThread):
                     # Добавляем новые координаты для точки определенного цвета
                     self.parent().analyzer.add_next_position(name, (x, y))
                 except Exception as e:
-                    print('exp', e)
+                    print('camera_views.py:88 // exp //', e)
                     pass
 
                 cv2.circle(img, (x, y), 5, color_yellow, 2)

@@ -5,9 +5,9 @@ from PyQt5.QtCore import pyqtSlot, Qt
 from PyQt5.QtWidgets import QWidget, QMessageBox
 from PyQt5.QtGui import QImage, QPixmap, QCloseEvent
 
-from modules.camera_views import ColorRangeCamera
 from modules.tools import abspath
 from modules.analyzer import Graph
+from modules.camera_views import ColorRangeCamera
 
 
 class ColorRangeWindow(QWidget):
@@ -16,7 +16,7 @@ class ColorRangeWindow(QWidget):
         uic.loadUi(abspath(r'data\ui\color_range_settings_window.ui'), self)
         self.parent = parent
         self.camera = self.colors = None
-        self.saved = False
+        self.saved = self.is_saved_to_json = False
         self.initUI()
 
     @pyqtSlot(QImage)
@@ -49,6 +49,8 @@ class ColorRangeWindow(QWidget):
         self.confirm_btn.clicked.connect(self.save_edited_color)
         self.cancel_btn.clicked.connect(self.closeEvent)
 
+        self.reset_btn.clicked.connect(self.reset_color)
+
         # Загружаем все цвета из файла
         self.load_colors()
 
@@ -70,6 +72,16 @@ class ColorRangeWindow(QWidget):
 
         # Устанавливаем значения цветов
         self.set_color_val()
+
+    def get_hsv_min_max(self):
+        # Получить диапазон цветов из формы
+        return [
+            [self.st_hue_slider.value(), self.st_sat_slider.value(),
+             self.st_val_slider.value()],
+            [self.end_hue_slider.value(),
+             self.end_sat_slider.value(),
+             self.end_val_slider.value()]
+        ]
 
     def set_color_val(self, *args, default=False):
         # Дефолтное значение для нового цвета
@@ -95,27 +107,20 @@ class ColorRangeWindow(QWidget):
             slider.setValue(color[1][n])
             label.setText(str(color[1][n]))
 
-    def get_hsv_min_max(self):
-        # Получить диапазон цветов из формы
-        return [
-            [self.st_hue_slider.value(), self.st_sat_slider.value(),
-             self.st_val_slider.value()],
-            [self.end_hue_slider.value(),
-             self.end_sat_slider.value(),
-             self.end_val_slider.value()]
-        ]
-
     def set_camera_hsv_colors(self):
         self.camera.set_hmin_hmax(*self.get_hsv_min_max())
 
     def is_color_edited(self) -> bool:
         # Получаем название цвета и его сохраненное значание
         name = self.colorsBox.currentText()
+        orig_name = self.colorsBox.itemData(
+            self.colorsBox.currentIndex(), Qt.UserRole)
         hsv_min_max = self.get_hsv_min_max()
 
         # Если подобного цвета нет или значения цвета отредактированы,
         # то считаем что цвет изменен
-        if name not in self.colors or self.colors[name] != hsv_min_max:
+        if name not in self.colors or name != orig_name \
+                or self.colors[name] != hsv_min_max:
             self.saved = False
             return True
         self.saved = True
@@ -132,6 +137,19 @@ class ColorRangeWindow(QWidget):
             # Выход без сохранения
             self.saved = True
 
+    def msg_box(self, title, decr, type_msg: str = 'info'):
+        # type_msg: info (information), warn (warning), crit (critical)
+        msg = QMessageBox()
+        if type_msg == 'warn':
+            msg.warning(self, title, decr, msg.Ok)
+        elif type_msg == 'info':
+            msg.information(self, title, decr, msg.Ok)
+        elif type_msg == 'crit':
+            msg.critical(self, title, decr, msg.Ok)
+
+    def reset_color(self):
+        self.set_color_val(default=True)
+
     def save_edited_color(self):
         # Сохраниение измененного цвета
         hsv_min_max = self.get_hsv_min_max()
@@ -139,27 +157,56 @@ class ColorRangeWindow(QWidget):
         orig_name = self.colorsBox.itemData(
             self.colorsBox.currentIndex(), Qt.UserRole)
 
-        if orig_name in self.colors:
-            self.colors.pop(orig_name)
+        # Если цвет не уникален, то выдаем предупреждение
+        if orig_name != name and name in self.colors:
+            self.msg_box('Проблемы при сохранении',
+                         'Название цвета не уникально.'
+                         '\nПереименуйте цвет и попробуйте снова.',
+                         type_msg='warn')
+        else:
+            # Удаляем старое имя из списка цветов
+            if orig_name in self.colors:
+                self.colors.pop(orig_name)
 
-        self.colors[name] = hsv_min_max
+            self.colors[name] = hsv_min_max
+
+            # Заменяем обекту его изначальное имя сохраненным именем
+            self.colorsBox.setItemData(self.colorsBox.currentIndex(),
+                                       name, Qt.UserRole)
+
+            self.msg_box('Успешное сохранение',
+                         f'Цвет "{name}" успешно сохранен.', type_msg='info')
 
     def save_colors_to_json(self):
+        if self.is_saved_to_json:
+            return
+
         # Сохранение всех цветов в файл
-        with open(abspath(r'data\settings\colors_settings.json'), 'w',
-                  encoding='utf-8') as file:
-            # Загружаем все цвета в json файл
-            json.dump({'Colors': [{'name': k,
-                                   'hsv_min': v[0], 'hsv_max': v[1]}
-                                  for k, v in self.colors.items()]}, file,
-                      ensure_ascii=False)
+        try:
+            with open(abspath(r'data\settings\colors_settings.json'), 'w',
+                      encoding='utf-8') as file:
+                # Загружаем все цвета в json файл
+                json.dump({'Colors': [{'name': k,
+                                       'hsv_min': v[0], 'hsv_max': v[1]}
+                                      for k, v in self.colors.items()]}, file,
+                          ensure_ascii=False)
+
+            self.is_saved_to_json = True
+
+            # Сообщаем пользователю об успешном сохранении
+            self.msg_box('Успешное сохранение',
+                         f'Все цвета успешно сохранены.', type_msg='info')
+        except Exception as e:
+            print(e)
+            self.msg_box('Произошла ошибка при сохранении',
+                         f'Описание ошибки:\n{str(e)}', type_msg='crit')
 
     def remove_undetected_cur_item(self):
         # Если новый созданный элемент не был сохранен, то удаляем из списка
         index = self.colorsBox.currentIndex()
-        if self.colorsBox.currentText() not in self.colors:
+        orig_name = self.colorsBox.itemData(index, Qt.UserRole)
+        if orig_name not in self.colors:
             # Также проверяем и по оригинальному имени
-            orig_name = self.colorsBox.itemData(index, Qt.UserRole)
             if orig_name not in self.colors:
                 self.colorsBox.removeItem(self.colorsBox.findText(
                     self.colorsBox.currentText()))
@@ -209,7 +256,7 @@ class ColorRangeWindow(QWidget):
             # Сбрасываем на дэфолтные значения диапазоны HSV
             self.set_color_val(default=True)
 
-    def set_colBoxEnabled(self, flag):
+    def set_colBox_enabled(self, flag):
         # Перебираем все элементы comboBox и устанавливаем им flag
         # как значение доступности
         color = None
@@ -240,7 +287,7 @@ class ColorRangeWindow(QWidget):
         # При раскрытии списка узнаем был ли редактировн цвет
         if self.is_color_edited():
             # Если был редактирован, то предупреждаем пользователя
-            self.set_colBoxEnabled(False)
+            self.set_colBox_enabled(False)
             self.quest_box()
         # Если же цвет сохранен, то мы можем переключаться между
         # другими цветами
@@ -249,7 +296,7 @@ class ColorRangeWindow(QWidget):
             self.remove_undetected_cur_item()
 
             self.set_color_val()
-            self.set_colBoxEnabled(True)
+            self.set_colBox_enabled(True)
 
     def color_changed_action(self, new_item):
         # При изменении выбранного цвета проверяем, чтобы предыдущий и
