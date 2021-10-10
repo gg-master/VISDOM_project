@@ -3,13 +3,13 @@
 import sys
 import json
 
-from PyQt5 import uic
+from PyQt5 import uic, QtGui
 from PyQt5.QtCore import pyqtSlot
 from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtWidgets import QApplication, QMainWindow
 
 from modules.tools import abspath
-from modules.analyzer import Analyser
+from modules.analyzer import Analyzer
 from modules.camera_views import MainWindowCamera
 
 
@@ -25,7 +25,7 @@ class MainWindow(QMainWindow):
         uic.loadUi(r'data\ui\main_window.ui', self)
         self.camera = self.color_range_wind = self.graph_window = None
 
-        self.analyzer = Analyser(self)
+        self.analyzer = Analyzer(self)
         self.analyzer.newCoordinatesSignal.connect(self.set_coord_in_label)
 
         # Цвета, доступные для выбора
@@ -40,6 +40,7 @@ class MainWindow(QMainWindow):
         self.camera.start()
 
         self.load_colors()
+        self.load_breath_set()
 
         # Добавляем действия для событий
         self.color_range_settings.triggered.connect(
@@ -55,6 +56,32 @@ class MainWindow(QMainWindow):
             # При выборе цвета загружаем его в систему распознавания
             i.currentTextChanged.connect(self.set_current_colors)
 
+        for i in [self.timeDelta, self.minDeltaTop, self.maxDeltaTop,
+                  self.minDeltaBot, self.maxDeltaBot]:
+            i.valueChanged.connect(self.set_breath_sett)
+
+        for i in [self.left_direct, self.right_direct]:
+            i.toggled.connect(self.set_breath_sett)
+
+    def load_breath_set(self):
+        # Загружаем и устанавливаем все значения для дыхания из файла
+        try:
+            with open(abspath(r'data\settings\breath_rec_settings.json'),
+                      encoding='utf-8') as file:
+                dct = json.load(file)
+                self.timeDelta.setValue(dct['TimeDelta'])
+                self.left_direct.setChecked(
+                    True if dct['Direction'] == 'left' else False)
+                self.right_direct.setChecked(
+                    True if dct['Direction'] == 'right' else False)
+
+                self.minDeltaTop.setValue(dct['MinDeltaTop'])
+                self.maxDeltaTop.setValue(dct['MaxDeltaTop'])
+                self.minDeltaBot.setValue(dct['MinDeltaBot'])
+                self.maxDeltaBot.setValue(dct['MaxDeltaBot'])
+        except Exception:
+            pass
+
     def load_colors(self):
         # Загружаем данные из файла
         try:
@@ -64,6 +91,15 @@ class MainWindow(QMainWindow):
                                for i in json.load(file)['Colors']}
         except Exception:
             pass
+
+    def set_breath_sett(self):
+        # Получаем значения для анализа из окна
+        self.analyzer.set_new_settings({
+            'timeDelta': self.timeDelta.value(),
+            'direction': 1 if self.left_direct.isChecked() else -1,
+            'delta_top': [self.minDeltaTop.value(), self.maxDeltaTop.value()],
+            'delta_bot': [self.minDeltaBot.value(), self.maxDeltaBot.value()]
+        })
 
     def set_current_colors(self):
         # Устанавливаем выбранные цвета в распознавание камеры
@@ -118,6 +154,28 @@ class MainWindow(QMainWindow):
         from modules.addit_windows import GraphWindow
         self.graph_window = GraphWindow(self)
         self.graph_window.show()
+
+    def save_breath_sett_to_json(self):
+        # Сохраняем все настройки в файл
+        try:
+            with open(abspath(r'data\settings\breath_rec_settings.json'), 'w',
+                      encoding='utf-8') as file:
+                json.dump({
+                    "TimeDelta": self.timeDelta.value(),
+                    "Direction": "left" if self.left_direct.isChecked()
+                    else 'right',
+                    "MinDeltaTop": self.minDeltaTop.value(),
+                    "MaxDeltaTop": self.maxDeltaTop.value(),
+                    "MinDeltaBot": self.minDeltaBot.value(),
+                    "MaxDeltaBot": self.maxDeltaBot.value()}, file,
+                    ensure_ascii=False)
+        except Exception as e:
+            print(e)
+            pass
+
+    def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
+        self.save_breath_sett_to_json()
+        super().closeEvent(a0)
 
 
 if __name__ == '__main__':
