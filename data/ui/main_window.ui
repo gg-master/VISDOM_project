@@ -514,7 +514,7 @@
      <string>Настройки</string>
     </property>
     <addaction name="color_range_settings"/>
-    <addaction name="analiz_graph_settings"/>
+    <addaction name="analyzer_graph_settings"/>
     <addaction name="server_settings"/>
    </widget>
    <widget class="QMenu" name="open_graph_inWindow">
@@ -542,7 +542,7 @@
     <string>Открыть график</string>
    </property>
   </action>
-  <action name="analiz_graph_settings">
+  <action name="analyzer_graph_settings">
    <property name="text">
     <string>Настройки анализатора и графика</string>
    </property>
