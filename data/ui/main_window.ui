@@ -292,33 +292,64 @@
          <bool>false</bool>
         </property>
         <layout class="QGridLayout" name="gridLayout_3">
-         <item row="5" column="0">
-          <widget class="QLabel" name="label_3">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
+         <item row="3" column="2">
+          <widget class="QSpinBox" name="minDeltaBot">
+           <property name="minimumSize">
+            <size>
+             <width>55</width>
+             <height>20</height>
+            </size>
            </property>
-           <property name="text">
-            <string>Макс. изм. нижней точки:</string>
+           <property name="maximumSize">
+            <size>
+             <width>16777215</width>
+             <height>16777215</height>
+            </size>
            </property>
-          </widget>
-         </item>
-         <item row="4" column="0">
-          <widget class="QLabel" name="label_delta_bottom">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="text">
-            <string>Мин. изм. нижней точки:</string>
+           <property name="maximum">
+            <number>10000</number>
            </property>
           </widget>
          </item>
-         <item row="2" column="2">
+         <item row="4" column="2">
+          <widget class="QSpinBox" name="maxDeltaBot">
+           <property name="minimumSize">
+            <size>
+             <width>55</width>
+             <height>20</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>16777215</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="maximum">
+            <number>10000</number>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="2">
+          <widget class="QSpinBox" name="timeDelta">
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>20</height>
+            </size>
+           </property>
+           <property name="maximum">
+            <number>10000</number>
+           </property>
+           <property name="singleStep">
+            <number>500</number>
+           </property>
+           <property name="value">
+            <number>2000</number>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="2">
           <widget class="QSpinBox" name="minDeltaTop">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
@@ -346,7 +377,7 @@
            </property>
           </widget>
          </item>
-         <item row="3" column="2">
+         <item row="2" column="2">
           <widget class="QSpinBox" name="maxDeltaTop">
            <property name="minimumSize">
             <size>
@@ -368,14 +399,20 @@
            </property>
           </widget>
          </item>
-         <item row="1" column="0">
-          <widget class="QLabel" name="label">
+         <item row="4" column="0">
+          <widget class="QLabel" name="label_3">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
            <property name="text">
-            <string>Направление:</string>
+            <string>Макс. изм. нижней точки:</string>
            </property>
           </widget>
          </item>
-         <item row="3" column="0">
+         <item row="2" column="0">
           <widget class="QLabel" name="label_2">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
@@ -385,6 +422,19 @@
            </property>
            <property name="text">
             <string>Макс. изм. верхней точки:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="0">
+          <widget class="QLabel" name="label_delta_bottom">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>Мин. изм. нижней точки:</string>
            </property>
           </widget>
          </item>
@@ -401,26 +451,7 @@
            </property>
           </widget>
          </item>
-         <item row="0" column="2">
-          <widget class="QSpinBox" name="timeDelta">
-           <property name="minimumSize">
-            <size>
-             <width>0</width>
-             <height>20</height>
-            </size>
-           </property>
-           <property name="maximum">
-            <number>10000</number>
-           </property>
-           <property name="singleStep">
-            <number>500</number>
-           </property>
-           <property name="value">
-            <number>2000</number>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="0">
+         <item row="1" column="0">
           <widget class="QLabel" name="label_delta_top">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
@@ -432,65 +463,6 @@
             <string>Мин. изм. верхней точки:</string>
            </property>
           </widget>
-         </item>
-         <item row="4" column="2">
-          <widget class="QSpinBox" name="minDeltaBot">
-           <property name="minimumSize">
-            <size>
-             <width>55</width>
-             <height>20</height>
-            </size>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>16777215</width>
-             <height>16777215</height>
-            </size>
-           </property>
-           <property name="maximum">
-            <number>10000</number>
-           </property>
-          </widget>
-         </item>
-         <item row="5" column="2">
-          <widget class="QSpinBox" name="maxDeltaBot">
-           <property name="minimumSize">
-            <size>
-             <width>55</width>
-             <height>20</height>
-            </size>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>16777215</width>
-             <height>16777215</height>
-            </size>
-           </property>
-           <property name="maximum">
-            <number>10000</number>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="2">
-          <layout class="QHBoxLayout" name="horizontalLayout_6">
-           <item>
-            <widget class="QRadioButton" name="left_direct">
-             <property name="text">
-              <string>Влево</string>
-             </property>
-             <property name="checked">
-              <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QRadioButton" name="right_direct">
-             <property name="text">
-              <string>Вправо</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
          </item>
         </layout>
        </widget>
@@ -542,6 +514,7 @@
      <string>Настройки</string>
     </property>
     <addaction name="color_range_settings"/>
+    <addaction name="analiz_graph_settings"/>
     <addaction name="server_settings"/>
    </widget>
    <widget class="QMenu" name="open_graph_inWindow">
@@ -567,6 +540,11 @@
   <action name="open_graph_inWindow_2">
    <property name="text">
     <string>Открыть график</string>
+   </property>
+  </action>
+  <action name="analiz_graph_settings">
+   <property name="text">
+    <string>Настройки анализатора и графика</string>
    </property>
   </action>
  </widget>

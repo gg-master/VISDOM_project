@@ -343,3 +343,7 @@ class GraphWindow(QWidget):
     def closeEvent(self, a0: QCloseEvent) -> None:
         self.parent.analyzer.remove_graph(self.graph)
         super().close()
+
+
+class AnalyzerGraphSettingsWindow(QWidget):
+    pass

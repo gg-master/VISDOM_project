@@ -22,8 +22,9 @@ def my_exception_hook(exctype, value, traceback):
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        uic.loadUi(r'data\ui\main_window.ui', self)
-        self.camera = self.color_range_wind = self.graph_window = None
+        uic.loadUi(abspath(r'data\ui\main_window.ui'), self)
+        self.camera = self.color_range_wind = \
+            self.graph_window = self.an_gr_set = None
 
         self.analyzer = Analyzer(self)
         self.analyzer.newCoordinatesSignal.connect(self.set_coord_in_label)
@@ -40,7 +41,9 @@ class MainWindow(QMainWindow):
         self.camera.start()
 
         self.load_colors()
+
         self.load_breath_set()
+        self.set_breath_sett()
 
         # Добавляем действия для событий
         self.color_range_settings.triggered.connect(
@@ -48,6 +51,9 @@ class MainWindow(QMainWindow):
 
         self.open_graph_inWindow.triggered.connect(
             self.open_graph_in_window)
+
+        self.analyzer_graph_settings.triggered.connect(
+            self.open_analyzer_graph_settings_window)
 
         for i in [self.curr_color_1, self.curr_color_2]:
             # Если активировано выпадающее меню, то убираем выбранные цвета
@@ -60,9 +66,6 @@ class MainWindow(QMainWindow):
                   self.minDeltaBot, self.maxDeltaBot]:
             i.valueChanged.connect(self.set_breath_sett)
 
-        for i in [self.left_direct, self.right_direct]:
-            i.toggled.connect(self.set_breath_sett)
-
     def load_breath_set(self):
         # Загружаем и устанавливаем все значения для дыхания из файла
         try:
@@ -70,11 +73,6 @@ class MainWindow(QMainWindow):
                       encoding='utf-8') as file:
                 dct = json.load(file)
                 self.timeDelta.setValue(dct['TimeDelta'])
-                self.left_direct.setChecked(
-                    True if dct['Direction'] == 'left' else False)
-                self.right_direct.setChecked(
-                    True if dct['Direction'] == 'right' else False)
-
                 self.minDeltaTop.setValue(dct['MinDeltaTop'])
                 self.maxDeltaTop.setValue(dct['MaxDeltaTop'])
                 self.minDeltaBot.setValue(dct['MinDeltaBot'])
@@ -94,12 +92,10 @@ class MainWindow(QMainWindow):
 
     def set_breath_sett(self):
         # Получаем значения для анализа из окна
-        self.analyzer.set_new_settings({
-            'timeDelta': self.timeDelta.value(),
-            'direction': 1 if self.left_direct.isChecked() else -1,
-            'delta_top': [self.minDeltaTop.value(), self.maxDeltaTop.value()],
-            'delta_bot': [self.minDeltaBot.value(), self.maxDeltaBot.value()]
-        })
+        self.analyzer.set_new_settings(
+            timeDelta=self.timeDelta.value(),
+            delta_top=[self.minDeltaTop.value(), self.maxDeltaTop.value()],
+            delta_bot=[self.minDeltaBot.value(), self.maxDeltaBot.value()])
 
     def set_current_colors(self):
         # Устанавливаем выбранные цвета в распознавание камеры
@@ -155,6 +151,11 @@ class MainWindow(QMainWindow):
         self.graph_window = GraphWindow(self)
         self.graph_window.show()
 
+    def open_analyzer_graph_settings_window(self):
+        from modules.addit_windows import AnalyzerGraphSettingsWindow
+        self.an_gr_set = AnalyzerGraphSettingsWindow(self)
+        self.an_gr_set.show()
+
     def save_breath_sett_to_json(self):
         # Сохраняем все настройки в файл
         try:
@@ -162,8 +163,6 @@ class MainWindow(QMainWindow):
                       encoding='utf-8') as file:
                 json.dump({
                     "TimeDelta": self.timeDelta.value(),
-                    "Direction": "left" if self.left_direct.isChecked()
-                    else 'right',
                     "MinDeltaTop": self.minDeltaTop.value(),
                     "MaxDeltaTop": self.maxDeltaTop.value(),
                     "MinDeltaBot": self.minDeltaBot.value(),

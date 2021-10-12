@@ -16,31 +16,28 @@ class Analyzer(QObject):
 
         # Массив с данными, а также таймер срабатывания регистрации точек в
         # массиве находятся в главном графике, который создается здесь.
-        self.graphics = [Graph(self, self.parent.graphicsView)]
+        self.main_graph = Graph(self, self.parent.graphicsView)
+        self.graphs = [self.main_graph]
 
         # Временной отрезок, который надо проанализировать (мс)
         tm_delta = 2000
 
-        self.set_len_analyseData = \
-            lambda x: x // self.graphics[0].timer.interval()
         # Размер массива для анализа
-        self.len_analyseData = self.set_len_analyseData(tm_delta)
+        self.len_analyseData = self.set_len_analyse_data(tm_delta)
 
         # Список с метками времени, которые уже были обнаружены
-        self.detected_localMinMax = []
+        self.detected_peaks = []
+        self.leave_det_peaks = 10
 
         # Коэфф сглаживания
         self.window_len = 20
-
-        # Направление, в какую сторону человек дышит. Влево - 1, Вправо - -1
-        self.direction = 1
 
         self.delta_top = [0, 0]
         self.delta_bot = [0, 0]
 
     def analyse(self):
-        if not self.graphics[0].is_active() or \
-                len(self.graphics[0].curves) < 2:
+        if not self.graphs[0].is_active() or \
+                len(self.graphs[0].curves) < 2:
             return
 
         data = self.get_analyse_data()
@@ -63,31 +60,101 @@ class Analyzer(QObject):
         y1_smooth = self.smooth_line(y1_graph)
         y2_smooth = self.smooth_line(y2_graph)
 
-        # Находим пики для каждой прямой
+        # Находим пики для каждой сглаженной прямой
         y1_peaks = self.find_peaks(y1_smooth)
         y2_peaks = self.find_peaks(y2_smooth)
-        print(f'{data[0][0]} - {data[-1][0]} // {y1_peaks[0]} '
-              f'({str(y1_peaks[1]), str(y1_peaks[2])}), {y2_peaks[0]} '
-              f'({str(y2_peaks[1]), str(y2_peaks[2])})')
+
+        self.analyse_peaks(y1_peaks, y2_peaks, data)
+
+    def analyse_peaks(self, y1_peaks, y2_peaks, data):
+        y1_max_p, y1_min_p = y1_peaks[1], y1_peaks[2]
+        y2_max_p, y2_min_p = y2_peaks[1], y2_peaks[2]
+
+        # Если экстремумов недостаточно - выходим
+        if len(y1_peaks[0]) < 3 and len(y2_peaks[0]) < 3:
+            return
+
+        # print(f'{data[0][0]} - {data[-1][0]} // {y1_peaks[0]} '
+        #       f'({str(y1_max_p), str(y1_min_p)}), {y2_peaks[0]} '
+        #       f'({str(y2_max_p), str(y2_min_p)})')
+
+        # Если и максимумов и минимумов больше, чем необходимо,
+        # получаем последний всплеск
+        if len(y1_max_p) > 2 and len(y1_min_p) > 1:
+            y1_max_p, y1_min_p = self.find_last_peak(y1_max_p, y1_min_p)
+        if len(y2_max_p) > 2 and len(y2_min_p) > 1:
+            y2_max_p, y2_min_p = self.find_last_peak(y2_max_p, y2_min_p)
+
+        # Если обнаружено нужное количество максимумов и миниимумов,
+        # то проверяем подходит ли всплеск под нормативы
+        if (len(y1_max_p) == 2 and len(y1_min_p) == 1) and \
+                (len(y2_max_p) == 2 and len(y2_min_p) == 1):
+
+            # Координата времени в которую был зафиксирован пик всплеска
+            p1_time = data[y1_min_p[0]][0]
+            p2_time = data[y2_min_p[0]][0]
+
+            # Преобразуем номера вершин в их координаты (y, x)
+            y1_max_p = list(map(lambda x: (data[x][1], data[x][3]), y1_max_p))
+            y1_min_p = (data[y1_min_p[0]][1], data[y1_min_p[0]][3])
+            y2_max_p = list(map(lambda x: (data[x][2], data[x][4]), y2_max_p))
+            y2_min_p = (data[y2_min_p[0]][1], data[y2_min_p[0]][3])
+
+            # Получаем установленную дельту для верхей и нижней точек
+            is_y1_top = True if y1_min_p[1] < y2_min_p[1] else False
+            normal_delta1 = self.delta_top if is_y1_top else self.delta_bot
+            normal_delta2 = self.delta_bot if is_y1_top else self.delta_top
+
+            delta1 = sum(map(lambda x: x[0], y1_max_p)) // 2 - y1_min_p[0]
+            delta2 = sum(map(lambda x: x[0], y2_max_p)) // 2 - y2_min_p[0]
+
+            if normal_delta1[0] <= delta1 <= normal_delta1[1] and \
+                    normal_delta2[0] <= delta2 <= normal_delta2[1] and \
+                    p1_time not in self.detected_peaks and \
+                    p2_time not in self.detected_peaks:
+                # TODO отправлять сигнал о дыхании
+                print(f'Work, [{y1_max_p} / {y1_min_p}], '
+                      f'[{y2_max_p} / {y2_min_p}]')
+                # Сохраняем время вершины всплеска, чтобы несколько раз
+                # подряд не обрабатывать один и тот-же всплеск
+                self.detected_peaks.extend([p1_time, p2_time])
 
     def smooth_line(self, array):
         kernel = np.ones(self.window_len, dtype=float) / self.window_len
         return np.convolve(array, kernel, 'same')
 
     @staticmethod
+    def find_last_peak(max_peaks, min_peaks):
+        f = max(max_peaks)
+        m = sorted(filter(lambda x: x < f, min_peaks))[-1]
+        s = sorted(filter(lambda x: x < m, max_peaks))[-1]
+        return [s, f], [m]
+
+    @staticmethod
     def find_peaks(array) -> list:
+        # Находим экстремумы используя втроенную функцию
         row_peaks = np.diff(np.sign(np.diff(array)))
+
         peaks = row_peaks.nonzero()[0] + 1
         peaks_min = (row_peaks > 0).nonzero()[0] + 1
         peaks_max = (row_peaks < 0).nonzero()[0] + 1
         return [peaks, peaks_max, peaks_min]
 
-    def set_new_settings(self, dct):
-        # Обновляем значения для анализа
-        self.len_analyseData = self.set_len_analyseData(dct['timeDelta'])
-        self.direction = dct['direction']
-        self.delta_top = dct['delta_top']
-        self.delta_bot = dct['delta_bot']
+    def set_len_analyse_data(self, tm_delta):
+        # Устанавливаем размер среза данных в зависимости от времени
+        return tm_delta // self.graphs[0].timer.interval()
+
+    def set_new_settings(self, **kwargs):
+        # Обновляем настройки анализатора
+        for k, v in kwargs.items():
+            if k == 'timeDelta':
+                self.len_analyseData = self.set_len_analyse_data(kwargs[k])
+            else:
+                try:
+                    getattr(self, k)
+                    setattr(self, k, kwargs[k])
+                except AttributeError:
+                    continue
 
     def add_next_position(self, name, position):
         # Полученный цвет загружаем в соответствующий блок
@@ -97,7 +164,7 @@ class Analyzer(QObject):
         # Обновляем набор цветов
         self.colors = new_colors
         # Перезагружаем кривые графиков
-        [graph.reload_curves() for graph in self.graphics]
+        [graph.reload_curves() for graph in self.graphs]
 
     def get_key_by_name(self, name) -> int:
         for k, v in self.colors.items():
@@ -106,24 +173,25 @@ class Analyzer(QObject):
         return -1
 
     def get_last_coordinates(self):
-        main_graph = self.graphics[0]
-        return main_graph.data[main_graph.ptr][1:]
+        return self.main_graph.data[self.main_graph.ptr][1:]
 
     def get_analyse_data(self):
-        graph = self.graphics[0]
-        return graph.data[graph.ptr - self.len_analyseData
-                          if graph.ptr > self.len_analyseData else 0:graph.ptr]
+        return self.main_graph.data[
+               self.main_graph.ptr - self.len_analyseData
+               if self.main_graph.ptr > self.len_analyseData
+               else 0:self.main_graph.ptr]
 
     def add_graph(self, graph):
-        self.graphics.append(graph)
+        self.graphs.append(graph)
 
     def remove_graph(self, graph):
-        self.graphics.remove(graph)
+        self.graphs.remove(graph)
 
 
 class Graph:
     def __init__(self, analyzer, graphics_view, orig=True):
         # np.seterr(all='ignore')
+
         # Объект анализатора, из которого получаем координаты
         self.analyzer = analyzer
 
@@ -162,8 +230,10 @@ class Graph:
         # Если создается график в окне, и нам необходимо в нем отображать
         # данные главного графика, копируем значения из главного графика
         if not orig:
-            orig = self.analyzer.graphics[0]
-            self.startTime = orig.startTime
+            self.startTime = self.analyzer.main_graph.startTime
+            self.maxChunks = self.analyzer.main_graph.maxChunks
+            self.save_full_data = self.analyzer.main_graph.save_full_data
+            self.timer.setInterval(self.analyzer.main_graph.timer.interval())
 
     def reload_curves(self):
         # Сохраняем объекты кривых, для последующего редактирования
@@ -205,6 +275,10 @@ class Graph:
 
         # Увеличиваем размерность массива данных при переполнении
         if self.ptr >= self.data.shape[0]:
+            # Также очищаем массив c обнаруженными пиками
+            self.analyzer.detected_peaks = self.analyzer.detected_peaks[
+                                           -self.analyzer.leave_det_peaks:]
+
             tmp = self.data
 
             # Если не сохраняем весь массив
@@ -239,7 +313,7 @@ class Graph:
                 continue
 
             if not self.orig:
-                orig = self.analyzer.graphics[0]
+                orig = self.analyzer.graphs[0]
                 self.data = orig.data
                 self.ptr = orig.ptr
 
@@ -278,3 +352,12 @@ class Graph:
 
     def is_active(self):
         return bool(self.curves)
+
+    def set_new_settings(self, **kwargs):
+        # Обновляем настройки графика
+        for k, v in kwargs.items():
+            try:
+                getattr(self, k)
+                setattr(self, k, kwargs[k])
+            except AttributeError:
+                continue
