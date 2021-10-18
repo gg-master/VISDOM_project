@@ -5,48 +5,42 @@ import asyncio
 import websockets
 from _thread import *
 
+from PyQt5.QtCore import QObject, pyqtSignal
 
-class Network:
+
+class Network(QObject):
+    exceptionSignal = pyqtSignal(str)
 
     pi_data = {
         'status': 'registration',
         'type': 'pi',
-        'token': ''
+        'token': None
     }
 
-    def __init__(self, is_test=False):
+    def __init__(self, parent, addr, token, is_test=False):
+        super().__init__(parent)
         # url = 'ws://127.0.0.1:8765'
         # self.addr = "ws://localhost:8080"
-        self.addr = 'wss://visdom-ws-server.herokuapp.com/'
+        self.addr = addr
 
-        self.token = 45
+        self.token = token
 
-        self.send_data = None
-        self.received_data = None
+        self.send_data = self.received_data = None
 
         self.close_conn = False
+
+        # Индетификационный код последнего сообщения
         self.last_vcode = ''
+
+        # Ответ после подключения
         self.conn_resp = None
 
-        self.exception = None
         # Запускаем новый поток, т.к asyncio.run() является
         # блокирующей функцией
         if not is_test:
             start_new_thread(self.start_async, ())
         else:
             self.start_async()
-
-    def wait_received_data(self, *params):
-        # Ожидаем нужные данные от сервера
-        # Прокручиваем полученную с сервера инфу пока не увидим нужные
-        # нам в нем параметры
-        # ВВЕДЕНО Для иммитирования блокировки во время подключения к серверу
-        while self.received_data is None \
-                or any(map(lambda x: x not in self.received_data, params)):
-            if self.received_data is not None and \
-                    'except' in self.received_data:
-                raise Exception(self.received_data['except'])
-        return self.received_data
 
     def get_received_data(self):
         return self.received_data
@@ -71,7 +65,7 @@ class Network:
     def validate_reg_data(self):
         # Проверка на валидность токена
         if self.token:
-            self.pi_data['token'] = self.token
+            self.pi_data['token'] = int(self.token)
             return True
         return False
 
@@ -135,13 +129,14 @@ class Network:
                         # Если пришли какие-то другие команлы, то выдаем ошибку
                         raise Exception(self.received_data['answer'])
         except Exception as e:
-            self.exception = e
-            print('exc', self.exception)
-            return
+            self.exceptionSignal.emit(str(e))
+            print('exc in network:', e)
+        finally:
+            self.close_conn = True
 
     def disconnect(self):
         self.close_conn = True
 
 
 if __name__ == '__main__':
-    net = Network(is_test=True)
+    net = Network(QObject(), 'ws://localhost:8080', 123, is_test=True)

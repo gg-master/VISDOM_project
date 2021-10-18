@@ -4,7 +4,7 @@ import sys
 import json
 
 from PyQt5 import uic, QtGui
-from PyQt5.QtCore import pyqtSlot, pyqtSignal
+from PyQt5.QtCore import pyqtSlot, pyqtSignal, QTimer
 from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtWidgets import QApplication, QMainWindow
 
@@ -30,7 +30,7 @@ class MainWindow(QMainWindow):
         self.main = main
 
         self.camera = self.color_range_wind = \
-            self.graph_window = self.an_gr_set = None
+            self.graph_window = self.an_gr_set = self.server_set = None
 
         self.analyzer = Analyzer(self)
         self.analyzer.newCoordinatesSignal.connect(self.set_coord_in_label)
@@ -39,6 +39,14 @@ class MainWindow(QMainWindow):
         self.colors = {}
 
         self.initUI()
+
+        # Таймер обновления состояния о подключении к серверу
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.check_network_state)
+        self.timer.start(2000)
+
+        # Первичная проверка состояния
+        self.check_network_state()
 
     def initUI(self):
         # Включаем камеру
@@ -52,17 +60,17 @@ class MainWindow(QMainWindow):
         self.set_breath_sett()
 
         # Добавляем действия для событий
+        # Открытие различных окон
         self.color_range_settings.triggered.connect(
             self.open_color_range_window)
-
         self.open_graph_inWindow.triggered.connect(
             self.open_graph_in_window)
-
         self.analyzer_graph_settings.triggered.connect(
             self.open_analyzer_graph_settings_window)
-
         self.restart_camera.triggered.connect(self.start_camera)
+        self.server_settings.triggered.connect(self.open_server_sett_window)
 
+        # Изменение настроек в главном окне
         for i in [self.curr_color_1, self.curr_color_2]:
             # Если активировано выпадающее меню, то убираем выбранные цвета
             i.dropDownMenu.connect(self.update_colors_in_comboBox)
@@ -75,6 +83,7 @@ class MainWindow(QMainWindow):
             i.valueChanged.connect(self.set_breath_sett)
 
     def start_camera(self):
+        # Запуск камеры
         self.camera = MainWindowCamera(self, self.MainVideoBox)
         self.camera.changePixmap.connect(self.setImage)
         self.camera.start()
@@ -175,6 +184,11 @@ class MainWindow(QMainWindow):
         self.an_gr_set = AnalyzerGraphSettingsWindow(self)
         self.an_gr_set.show()
 
+    def open_server_sett_window(self):
+        from modules.addit_windows import ServerSettingsWindow
+        self.server_set = ServerSettingsWindow(self)
+        self.server_set.show()
+
     def save_breath_sett_to_json(self):
         # Сохраняем все настройки в файл
         try:
@@ -193,23 +207,60 @@ class MainWindow(QMainWindow):
             pass
 
     def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
+        # Перед завершением сохраняем все настройки в файл
         self.save_breath_sett_to_json()
         self.closeWindowSignal.emit()
         super().closeEvent(a0)
 
+    def set_statusBar_text(self, text, style):
+        self.statusbar.setText(text)
+        self.statusbar.setStyleSheet(style)
+
+    def check_network_state(self, exp=None):
+        # Проверка состояния соединения
+        # Если есть ошибка, то выводим ее
+        if exp is not None:
+            self.set_statusBar_text(exp, 'background-color: rgb(170, 0, 0); '
+                                         'color: rgb(255, 255, 255)')
+            return
+        if not self.main.is_network_open():
+            self.set_statusBar_text('Нет соединения с сервером',
+                                    'background-color: rgb(170, 0, 0); '
+                                    'color: rgb(255, 255, 255)')
+        else:
+            self.set_statusBar_text('', 'background-color: transparent;')
+
 
 class Main:
     def __init__(self):
-        # self.net = Network()
+        self.net = None
 
+        # Создаем приложение и запускаем главное окно
         app = QApplication(sys.argv)
-        main_window = MainWindow(self)
-        main_window.show()
+        self.main_window = MainWindow(self)
+        self.main_window.show()
         sys.exit(app.exec())
 
     def send_signal(self):
-        # self.net.set_send_get_recv({'signal': True})
-        pass
+        # Если открыто соединение с сервером, то отправляем сигнал
+        if self.is_network_open():
+            self.net.set_send_get_recZv({'signal': True})
+
+    def is_network_open(self):
+        # Если имеется созданное соединени и оно не закрыто, то считаем,
+        # что мы соединены с сервером
+        if self.net is not None and not self.net.close_conn:
+            return True
+        return False
+
+    def create_network(self, address, token):
+        print(address, token)
+        # Подключение к серверу
+        self.net = Network(self.main_window, address, token)
+
+        # Подключаем сигнал с ошибками к главному окно для их отображения
+        self.net.exceptionSignal.connect(
+            self.main_window.check_network_state)
 
 
 if __name__ == '__main__':

@@ -8,9 +8,9 @@ from PyQt5.QtCore import pyqtSignal, QObject
 class Analyzer(QObject):
     newCoordinatesSignal = pyqtSignal()
 
-    def __init__(self, parent):
-        super().__init__(parent)
-        self.parent = parent
+    def __init__(self, main):
+        super().__init__(main)
+        self.parent = main
 
         self.colors = {}
 
@@ -338,7 +338,6 @@ class Graph:
                     self.curves.clear()
                     self.saved_curves.clear()
                     self.reload_curves()
-
             else:
                 # Увеличиваем массив вдвое
                 self.data = np.zeros((self.data.shape[0] * 2, 5))

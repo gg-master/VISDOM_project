@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>297</width>
+    <width>351</width>
     <height>166</height>
    </rect>
   </property>
@@ -15,6 +15,11 @@
     <width>297</width>
     <height>166</height>
    </size>
+  </property>
+  <property name="font">
+   <font>
+    <pointsize>10</pointsize>
+   </font>
   </property>
   <property name="windowTitle">
    <string>Настройки анализатора и графика</string>

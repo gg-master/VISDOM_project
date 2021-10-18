@@ -363,23 +363,22 @@ class AnalyzerGraphSettingsWindow(AutoClosedQWidget):
     def initUI(self):
         self.load_data()
 
-        self.window_len.valueChanged.connect(self.set_new_settings)
-
-        self.maxChunks.valueChanged.connect(self.set_new_settings)
-        self.timer_interval.valueChanged.connect(self.set_new_settings)
         self.save_full_data.stateChanged.connect(self.set_new_settings)
 
+        self.timer_interval.valueChanged.connect(self.set_new_settings)
+        self.window_len.valueChanged.connect(self.set_new_settings)
+        self.maxChunks.valueChanged.connect(self.set_new_settings)
+
     def load_data(self):
-        try:
-            with open(abspath(r'data\settings\breath_rec_settings.json'),
-                      encoding='utf-8') as file:
-                dct = json.load(file)['DetailSettings']
-                self.save_full_data.setChecked(dct['save_full_data'])
-                self.maxChunks.setValue(dct['maxChunks'])
-                self.timer_interval.setValue(dct['timer_interval'])
-                self.window_len.setValue(dct['window_len'])
-        except Exception:
-            pass
+        # Загружаем данные из приложения
+        for k, v in self.parent.analyzer.get_current_settings().items():
+            if k == 'save_full_data':
+                self.save_full_data.setChecked(v)
+            else:
+                try:
+                    getattr(self, k).setValue(v)
+                except AttributeError:
+                    continue
 
     def set_new_settings(self):
         # Устанавливаем настройки в анализатор и графики
@@ -389,3 +388,105 @@ class AnalyzerGraphSettingsWindow(AutoClosedQWidget):
             'maxChunks': self.maxChunks.value(),
             'timer_interval': self.timer_interval.value()
             })
+
+
+class ServerSettingsWindow(AutoClosedQWidget):
+    def __init__(self, parent):
+        super().__init__(parent)
+        uic.loadUi(abspath(r'data\ui\server_settings_window.ui'), self)
+
+        self.initUI()
+
+    def initUI(self):
+        self.load_data()
+
+        self.connect_btn.clicked.connect(self.connect_to_server)
+        self.disconnect_btn.clicked.connect(self.disc_from_server)
+
+        # Если соединение открыто, то выставляем переключатель и подключаем
+        # обработчик для сигнала об ошибках
+        if self.parent.main.is_network_open():
+            self.parent.main.net.exceptionSignal.connect(self.show_net_exc)
+            self.set_connect_flag(True)
+
+    def load_data(self):
+        # Загружаем сохраненный токен и адрес сервера
+        try:
+            with open(abspath(r'data\settings\server_settings.json'),
+                      encoding='utf-8') as file:
+                dct = json.load(file)
+                self.token.setText(dct['token'])
+                self.address.setText(dct['address'])
+        except Exception:
+            pass
+
+    def save_to_json(self):
+        try:
+            with open(abspath(r'data\settings\server_settings.json'), 'w',
+                      encoding='utf-8') as file:
+                json.dump({'address': self.address.text(),
+                           'token': self.token.text()}, file,
+                          ensure_ascii=False)
+        except Exception:
+            pass
+
+    def set_connect_flag(self, flag):
+        self.conn.setChecked(flag)
+        self.conn.setEnabled(flag)
+
+        self.disc.setChecked(not flag)
+        self.disc.setEnabled(not flag)
+
+    def set_message(self, text='', bg_color='transparent',
+                    text_color=(0, 0, 0)):
+        self.statusBar.setText(text)
+        self.statusBar.setStyleSheet(
+            f'background-color: '
+            f'{f"rgb{bg_color}" if bg_color != "transparent" else bg_color}; '
+            f'color: rgb{text_color}')
+
+    def connect_to_server(self):
+        # Простая валидация данных
+        if not self.address.text():
+            self.set_message('Введите адрес!', bg_color='(200, 0, 0)',
+                             text_color=(255, 255, 255))
+        elif not self.token.text():
+            self.set_message('Введите токен!', bg_color='(200, 0, 0)',
+                             text_color=(255, 255, 255))
+        else:
+            # Очищаем уведомления
+            self.set_message()
+
+            # Если соединение с сервером уже установлено, то разрываем его
+            if self.parent.main.is_network_open():
+                self.disc_from_server()
+
+            # Создаем новое соединение с сервером
+            self.parent.main.create_network(address=self.address.text(),
+                                            token=self.token.text())
+            # Подключаем обработчик для ошибок
+            self.parent.main.net.exceptionSignal.connect(self.show_net_exc)
+
+            # Переключаем в интерфейсе переключатель о
+            # подключении/отключении соединения
+            self.set_connect_flag(True)
+
+    def disc_from_server(self):
+        # Отключаемся от сервера
+        if self.parent.main.is_network_open():
+            self.parent.main.net.disconnect()
+            self.set_connect_flag(False)
+
+    def show_net_exc(self, exc):
+        # Отображаем ошибки, которые возвращает Network
+        self.set_connect_flag(False)
+        self.set_message(exc, bg_color='(255, 85, 0)',
+                         text_color=(255, 255, 255))
+
+    def closeEvent(self, a0: QCloseEvent) -> None:
+        # При закрытии отключаемся от сигнала для детекта ошибок
+        if self.parent.main.is_network_open():
+            self.parent.main.net.exceptionSignal.disconnect(self.show_net_exc)
+
+        self.save_to_json()
+        super().closeEvent(a0)
