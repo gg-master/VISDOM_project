@@ -244,7 +244,7 @@ class Main:
     def send_signal(self):
         # Если открыто соединение с сервером, то отправляем сигнал
         if self.is_network_open():
-            self.net.set_send_get_recZv({'signal': True})
+            self.net.set_send_get_recv({'signal': True})
 
     def is_network_open(self):
         # Если имеется созданное соединени и оно не закрыто, то считаем,
