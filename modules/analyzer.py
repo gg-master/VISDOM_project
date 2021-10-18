@@ -36,6 +36,10 @@ class Analyzer(QObject):
         self.delta_bot = [0, 0]
 
     def analyse(self):
+        """
+        Предварительная фильтровка данных и получение экстремумов
+        :return:
+        """
         if not self.graphs[0].is_active() or \
                 len(self.graphs[0].curves) < 2:
             return
@@ -67,6 +71,13 @@ class Analyzer(QObject):
         self.analyse_peaks(y1_peaks, y2_peaks, data)
 
     def analyse_peaks(self, y1_peaks, y2_peaks, data):
+        """
+        Анализирование экстремумов
+        :param y1_peaks: np.array с экстремумами первой кривой
+        :param y2_peaks:
+        :param data:
+        :return:
+        """
         y1_max_p, y1_min_p = y1_peaks[1], y1_peaks[2]
         y2_max_p, y2_min_p = y2_peaks[1], y2_peaks[2]
 
@@ -115,16 +126,28 @@ class Analyzer(QObject):
                 # TODO отправлять сигнал о дыхании
                 print(f'Work, [{y1_max_p} / {y1_min_p}], '
                       f'[{y2_max_p} / {y2_min_p}]')
+                self.send_signal()
                 # Сохраняем время вершины всплеска, чтобы несколько раз
                 # подряд не обрабатывать один и тот-же всплеск
                 self.detected_peaks.extend([p1_time, p2_time])
 
     def smooth_line(self, array):
+        """
+        Сглаживание кривой
+        :param array:
+        :return:
+        """
         kernel = np.ones(self.window_len, dtype=float) / self.window_len
         return np.convolve(array, kernel, 'same')
 
     @staticmethod
     def find_last_peak(max_peaks, min_peaks):
+        """
+        Возвращает последний всплеск из переданных значений
+        :param max_peaks: Все верхние экстремумы
+        :param min_peaks: Все нижние экстремумы
+        :return: [[max_peak1, max_peak2], [min_peak]]
+        """
         f = max(max_peaks)
         m = sorted(filter(lambda x: x < f, min_peaks))[-1]
         s = sorted(filter(lambda x: x < m, max_peaks))[-1]
@@ -151,9 +174,13 @@ class Analyzer(QObject):
                 self.len_analyseData = self.set_len_analyse_data(kwargs[k])
             else:
                 try:
+                    # Пробуем найти в собственном классе необходимый атрибут
                     getattr(self, k)
-                    setattr(self, k, kwargs[k])
+                    # Изменяем значение атрибута, если нашли
+                    setattr(self, k, v)
                 except AttributeError:
+                    # Проверяем имеется ли атрибут в объектах графиков
+                    [i.set_new_settings(**{k: v}) for i in self.graphs]
                     continue
 
     def add_next_position(self, name, position):
@@ -176,16 +203,28 @@ class Analyzer(QObject):
         return self.main_graph.data[self.main_graph.ptr][1:]
 
     def get_analyse_data(self):
+        # Возвращает срех данных для анализа
         return self.main_graph.data[
                self.main_graph.ptr - self.len_analyseData
                if self.main_graph.ptr > self.len_analyseData
-               else 0:self.main_graph.ptr]
+               else 0: self.main_graph.ptr]
+
+    def get_current_settings(self):
+        # Собираем сохрняемые данные
+        return {'window_len': self.window_len,
+                'save_full_data': self.main_graph.save_full_data,
+                'timer_interval': self.main_graph.timer.interval(),
+                'maxChunks': self.main_graph.maxChunks}
 
     def add_graph(self, graph):
         self.graphs.append(graph)
 
     def remove_graph(self, graph):
-        self.graphs.remove(graph)
+        if graph in self.graphs:
+            self.graphs.remove(graph)
+
+    def send_signal(self):
+        self.parent.main.send_signal()
 
 
 class Graph:
@@ -234,6 +273,7 @@ class Graph:
             self.maxChunks = self.analyzer.main_graph.maxChunks
             self.save_full_data = self.analyzer.main_graph.save_full_data
             self.timer.setInterval(self.analyzer.main_graph.timer.interval())
+            self.reload_curves()
 
     def reload_curves(self):
         # Сохраняем объекты кривых, для последующего редактирования
@@ -356,8 +396,11 @@ class Graph:
     def set_new_settings(self, **kwargs):
         # Обновляем настройки графика
         for k, v in kwargs.items():
-            try:
-                getattr(self, k)
-                setattr(self, k, kwargs[k])
-            except AttributeError:
-                continue
+            if k == 'timer_interval':
+                self.timer.setInterval(kwargs[k])
+            else:
+                try:
+                    getattr(self, k)
+                    setattr(self, k, kwargs[k])
+                except AttributeError:
+                    continue

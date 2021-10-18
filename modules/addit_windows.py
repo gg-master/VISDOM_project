@@ -8,13 +8,14 @@ from PyQt5.QtGui import QImage, QPixmap, QCloseEvent
 from modules.tools import abspath
 from modules.analyzer import Graph
 from modules.camera_views import ColorRangeCamera
+from modules.myQElements import AutoClosedQWidget
 
 
-class ColorRangeWindow(QWidget):
-    def __init__(self, parent, *args, **kwargs):
-        super().__init__()
+class ColorRangeWindow(AutoClosedQWidget):
+    def __init__(self, parent):
+        super().__init__(parent)
         uic.loadUi(abspath(r'data\ui\color_range_settings_window.ui'), self)
-        self.parent = parent
+
         self.camera = self.colors = None
         self.saved = self.is_saved_to_json = False
         self.initUI()
@@ -33,7 +34,7 @@ class ColorRangeWindow(QWidget):
         for i in [self.st_hue_slider, self.st_sat_slider, self.st_val_slider,
                   self.end_hue_slider, self.end_sat_slider,
                   self.end_val_slider]:
-            i.valueChanged.connect(self.sliderChanged)
+            i.valueChanged.connect(self.slider_changed_action)
 
         # При переключении цвета загружаем данные о цвете
         self.colorsBox.activated[str].connect(self.color_changed_action)
@@ -312,7 +313,12 @@ class ColorRangeWindow(QWidget):
         # Переключаем цвет
         self.set_color_val()
 
-    def sliderChanged(self):
+    def slider_changed_action(self):
+        """
+        При перемещении слайдера изменяем значение в лэйбле и передаем
+        их в камеру
+        :return:
+        """
         sname = self.sender().objectName()
         getattr(self, f"{sname[:sname.rfind('_')]}_val").setText(
             str(self.sender().value()))
@@ -328,22 +334,58 @@ class ColorRangeWindow(QWidget):
         super().close()
 
 
-class GraphWindow(QWidget):
+class GraphWindow(AutoClosedQWidget):
     def __init__(self, parent):
-        super().__init__()
+        super().__init__(parent)
         uic.loadUi(abspath(r'data\ui\graph_window.ui'), self)
-
-        self.parent = parent
 
         self.graph = Graph(parent.analyzer, self.graphicsView, orig=False)
 
         # Добавляем в список графиков, чтобы одновременно обновлять кривые
         self.parent.analyzer.add_graph(self.graph)
 
-    def closeEvent(self, a0: QCloseEvent) -> None:
+    def destroy_graph(self):
         self.parent.analyzer.remove_graph(self.graph)
-        super().close()
+        self.graph = None
+
+    def closeEvent(self, a0: QCloseEvent) -> None:
+        self.destroy_graph()
+        super().closeEvent(a0)
 
 
-class AnalyzerGraphSettingsWindow(QWidget):
-    pass
+class AnalyzerGraphSettingsWindow(AutoClosedQWidget):
+    def __init__(self, parent):
+        super().__init__(parent)
+        uic.loadUi(abspath(r'data\ui\analyzer_graph_settings_window.ui'), self)
+
+        self.initUI()
+
+    def initUI(self):
+        self.load_data()
+
+        self.window_len.valueChanged.connect(self.set_new_settings)
+
+        self.maxChunks.valueChanged.connect(self.set_new_settings)
+        self.timer_interval.valueChanged.connect(self.set_new_settings)
+        self.save_full_data.stateChanged.connect(self.set_new_settings)
+
+    def load_data(self):
+        try:
+            with open(abspath(r'data\settings\breath_rec_settings.json'),
+                      encoding='utf-8') as file:
+                dct = json.load(file)['DetailSettings']
+                self.save_full_data.setChecked(dct['save_full_data'])
+                self.maxChunks.setValue(dct['maxChunks'])
+                self.timer_interval.setValue(dct['timer_interval'])
+                self.window_len.setValue(dct['window_len'])
+        except Exception:
+            pass
+
+    def set_new_settings(self):
+        # Устанавливаем настройки в анализатор и графики
+        self.parent.set_analyzer_graph_settings({
+            'window_len': self.window_len.value(),
+            'save_full_data': self.save_full_data.isChecked(),
+            'maxChunks': self.maxChunks.value(),
+            'timer_interval': self.timer_interval.value()
+            })

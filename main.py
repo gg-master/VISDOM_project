@@ -4,13 +4,14 @@ import sys
 import json
 
 from PyQt5 import uic, QtGui
-from PyQt5.QtCore import pyqtSlot
+from PyQt5.QtCore import pyqtSlot, pyqtSignal
 from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtWidgets import QApplication, QMainWindow
 
 from modules.tools import abspath
 from modules.analyzer import Analyzer
 from modules.camera_views import MainWindowCamera
+from modules.network import Network
 
 
 def my_exception_hook(exctype, value, traceback):
@@ -20,9 +21,14 @@ def my_exception_hook(exctype, value, traceback):
 
 
 class MainWindow(QMainWindow):
-    def __init__(self):
+    closeWindowSignal = pyqtSignal()
+
+    def __init__(self, main):
         super().__init__()
         uic.loadUi(abspath(r'data\ui\main_window.ui'), self)
+
+        self.main = main
+
         self.camera = self.color_range_wind = \
             self.graph_window = self.an_gr_set = None
 
@@ -36,12 +42,12 @@ class MainWindow(QMainWindow):
 
     def initUI(self):
         # Включаем камеру
-        self.camera = MainWindowCamera(self, self.MainVideoBox)
-        self.camera.changePixmap.connect(self.setImage)
-        self.camera.start()
+        self.start_camera()
 
+        # Загружаем сохраненные цвета
         self.load_colors()
 
+        # Загружаем настройки дыхания
         self.load_breath_set()
         self.set_breath_sett()
 
@@ -55,6 +61,8 @@ class MainWindow(QMainWindow):
         self.analyzer_graph_settings.triggered.connect(
             self.open_analyzer_graph_settings_window)
 
+        self.restart_camera.triggered.connect(self.start_camera)
+
         for i in [self.curr_color_1, self.curr_color_2]:
             # Если активировано выпадающее меню, то убираем выбранные цвета
             i.dropDownMenu.connect(self.update_colors_in_comboBox)
@@ -65,6 +73,11 @@ class MainWindow(QMainWindow):
         for i in [self.timeDelta, self.minDeltaTop, self.maxDeltaTop,
                   self.minDeltaBot, self.maxDeltaBot]:
             i.valueChanged.connect(self.set_breath_sett)
+
+    def start_camera(self):
+        self.camera = MainWindowCamera(self, self.MainVideoBox)
+        self.camera.changePixmap.connect(self.setImage)
+        self.camera.start()
 
     def load_breath_set(self):
         # Загружаем и устанавливаем все значения для дыхания из файла
@@ -77,6 +90,8 @@ class MainWindow(QMainWindow):
                 self.maxDeltaTop.setValue(dct['MaxDeltaTop'])
                 self.minDeltaBot.setValue(dct['MinDeltaBot'])
                 self.maxDeltaBot.setValue(dct['MaxDeltaBot'])
+
+                self.set_analyzer_graph_settings(dct['DetailSettings'])
         except Exception:
             pass
 
@@ -89,6 +104,10 @@ class MainWindow(QMainWindow):
                                for i in json.load(file)['Colors']}
         except Exception:
             pass
+
+    def set_analyzer_graph_settings(self, data):
+        # Изменяем найтройки анализатора
+        self.analyzer.set_new_settings(**data)
 
     def set_breath_sett(self):
         # Получаем значения для анализа из окна
@@ -166,21 +185,33 @@ class MainWindow(QMainWindow):
                     "MinDeltaTop": self.minDeltaTop.value(),
                     "MaxDeltaTop": self.maxDeltaTop.value(),
                     "MinDeltaBot": self.minDeltaBot.value(),
-                    "MaxDeltaBot": self.maxDeltaBot.value()}, file,
-                    ensure_ascii=False)
+                    "MaxDeltaBot": self.maxDeltaBot.value(),
+                    "DetailSettings": self.analyzer.get_current_settings()},
+                    file, ensure_ascii=False)
         except Exception as e:
             print(e)
             pass
 
     def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
         self.save_breath_sett_to_json()
+        self.closeWindowSignal.emit()
         super().closeEvent(a0)
+
+
+class Main:
+    def __init__(self):
+        # self.net = Network()
+
+        app = QApplication(sys.argv)
+        main_window = MainWindow(self)
+        main_window.show()
+        sys.exit(app.exec())
+
+    def send_signal(self):
+        # self.net.set_send_get_recv({'signal': True})
+        pass
 
 
 if __name__ == '__main__':
     sys.excepthook = my_exception_hook
-
-    app = QApplication(sys.argv)
-    main_window = MainWindow()
-    main_window.show()
-    sys.exit(app.exec())
+    Main()

@@ -513,18 +513,19 @@
     <property name="title">
      <string>Настройки</string>
     </property>
+    <addaction name="restart_camera"/>
     <addaction name="color_range_settings"/>
     <addaction name="analyzer_graph_settings"/>
     <addaction name="server_settings"/>
    </widget>
-   <widget class="QMenu" name="open_graph_inWindow">
+   <widget class="QMenu" name="open_graph_inWindow_list">
     <property name="title">
      <string>Окна</string>
     </property>
-    <addaction name="open_graph_inWindow_2"/>
+    <addaction name="open_graph_inWindow"/>
    </widget>
    <addaction name="Settings"/>
-   <addaction name="open_graph_inWindow"/>
+   <addaction name="open_graph_inWindow_list"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="color_range_settings">
@@ -537,7 +538,7 @@
     <string>Настройки сервера</string>
    </property>
   </action>
-  <action name="open_graph_inWindow_2">
+  <action name="open_graph_inWindow">
    <property name="text">
     <string>Открыть график</string>
    </property>
@@ -545,6 +546,16 @@
   <action name="analyzer_graph_settings">
    <property name="text">
     <string>Настройки анализатора и графика</string>
+   </property>
+  </action>
+  <action name="restart_interface">
+   <property name="text">
+    <string>Перезагрузить интерфейс</string>
+   </property>
+  </action>
+  <action name="restart_camera">
+   <property name="text">
+    <string>Перезагрузить камеру</string>
    </property>
   </action>
  </widget>
