@@ -1,5 +1,6 @@
 import json
 import random
+import socket
 import string
 import asyncio
 import websockets
@@ -130,13 +131,22 @@ class Network(QObject):
                         # Если пришли какие-то другие команлы, то выдаем ошибку
                         raise Exception(self.received_data['answer'])
         except Exception as e:
-            self.exceptionSignal.emit(str(e))
+            self.exceptionSignal.emit(self.validate_exception(e))
             print('exc in network:', e)
         finally:
             self.close_conn = True
 
     def disconnect(self):
         self.close_conn = True
+
+    @staticmethod
+    def validate_exception(exc):
+        try:
+            raise exc
+        except (ConnectionRefusedError, socket.gaierror) as e:
+            return 'Проверьте состояние интернета и попробуйте снова.'
+        except Exception as e:
+            return str(e)
 
 
 if __name__ == '__main__':

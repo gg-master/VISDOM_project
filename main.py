@@ -259,7 +259,6 @@ class Main:
         return False
 
     def create_network(self, address, token):
-        print(address, token)
         # Подключение к серверу
         self.net = Network(self.main_window, address, token)
 
