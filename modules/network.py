@@ -86,7 +86,8 @@ class Network(QObject):
                 print(self.conn_resp)
 
                 # Если не удалось подключиться к серверу, выдаем ошибку
-                if self.conn_resp['answer'] != 'Successful registration':
+                if self.conn_resp['answer'] != 'Successful registration of ' \
+                                               'your client':
                     raise Exception(self.conn_resp['answer'])
 
                 # Начинаем общаться с сервером

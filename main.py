@@ -210,6 +210,11 @@ class MainWindow(QMainWindow):
         # Перед завершением сохраняем все настройки в файл
         self.save_breath_sett_to_json()
         self.closeWindowSignal.emit()
+
+        # При закрытии приложения отключаемся от сервера
+        if self.main.is_network_open():
+            self.main.net.disconnect()
+
         super().closeEvent(a0)
 
     def set_statusBar_text(self, text, style):

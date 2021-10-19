@@ -1,1 +1,1 @@
-{"address": "ws://localhost:8080", "token": "123"}
+{"address": "wss://visdom-ws-server.herokuapp.com/", "token": "1238"}
