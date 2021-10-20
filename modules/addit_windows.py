@@ -159,7 +159,8 @@ class ColorRangeWindow(AutoClosedQWidget):
             self.colorsBox.currentIndex(), Qt.UserRole)
 
         # Если цвет не уникален, то выдаем предупреждение
-        if orig_name != name and name in self.colors:
+        if orig_name != name and name in self.colors or \
+                name == 'Выберите цвет':
             self.msg_box('Проблемы при сохранении',
                          'Название цвета не уникально.'
                          '\nПереименуйте цвет и попробуйте снова.',

@@ -234,12 +234,23 @@
                <property name="editable">
                 <bool>false</bool>
                </property>
+               <property name="currentText">
+                <string>Выберите цвет</string>
+               </property>
+               <property name="currentIndex">
+                <number>0</number>
+               </property>
                <property name="placeholderText">
                 <string>Выберите цвет</string>
                </property>
                <property name="frame">
                 <bool>true</bool>
                </property>
+               <item>
+                <property name="text">
+                 <string>Выберите цвет</string>
+                </property>
+               </item>
               </widget>
              </item>
             </layout>
@@ -263,9 +274,23 @@
                  <pointsize>10</pointsize>
                 </font>
                </property>
+               <property name="editable">
+                <bool>false</bool>
+               </property>
+               <property name="currentText">
+                <string>Выберите цвет</string>
+               </property>
+               <property name="currentIndex">
+                <number>0</number>
+               </property>
                <property name="placeholderText">
                 <string>Выберите цвет</string>
                </property>
+               <item>
+                <property name="text">
+                 <string>Выберите цвет</string>
+                </property>
+               </item>
               </widget>
              </item>
             </layout>

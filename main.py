@@ -132,11 +132,18 @@ class MainWindow(QMainWindow):
                               [self.curr_color_1, self.curr_color_2])
                           if i in self.colors}
         self.analyzer.update_colors(
-            {n: {'name': i if i else None} for n, i in enumerate(
+            {n: {'name': i if i and i != 'Выберите цвет' else None}
+             for n, i in enumerate(
                 map(lambda x: x.currentText(),
                     [self.curr_color_1, self.curr_color_2]), start=1)})
 
         self.camera.set_current_colors(current_colors)
+
+    def set_default_color_val(self):
+        # Устанавливаем дефолтные значения, когда раскрывается список
+        for i in [self.curr_color_1, self.curr_color_2]:
+            if not i.currentText():
+                i.setCurrentText('Выберите цвет')
 
     def update_colors_in_comboBox(self):
         # Предварительно отчищаем от всех значений
@@ -154,6 +161,10 @@ class MainWindow(QMainWindow):
         # Устанавливаем все зачения, которые не выбраны в другом comboBox
         for i in filter(lambda x: x != sec_col, self.colors.keys()):
             self.sender().addItem(i)
+
+        # Добавляем дефолтное значение
+        self.sender().insertItem(0, 'Выберите цвет')
+        self.set_default_color_val()
 
     def set_coord_in_label(self):
         # Получаем последние координаты и устанавливаем их в лэйблы
