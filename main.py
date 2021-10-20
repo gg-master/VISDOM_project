@@ -25,7 +25,7 @@ class MainWindow(QMainWindow):
 
     def __init__(self, main):
         super().__init__()
-        uic.loadUi(abspath(r'data\ui\main_window.ui'), self)
+        uic.loadUi(abspath('data/ui/main_window.ui'), self)
 
         self.main = main
 
@@ -91,7 +91,7 @@ class MainWindow(QMainWindow):
     def load_breath_set(self):
         # Загружаем и устанавливаем все значения для дыхания из файла
         try:
-            with open(abspath(r'data\settings\breath_rec_settings.json'),
+            with open(abspath('data/settings/breath_rec_settings.json'),
                       encoding='utf-8') as file:
                 dct = json.load(file)
                 self.timeDelta.setValue(dct['TimeDelta'])
@@ -192,7 +192,7 @@ class MainWindow(QMainWindow):
     def save_breath_sett_to_json(self):
         # Сохраняем все настройки в файл
         try:
-            with open(abspath(r'data\settings\breath_rec_settings.json'), 'w',
+            with open(abspath('data/settings/breath_rec_settings.json'), 'w',
                       encoding='utf-8') as file:
                 json.dump({
                     "TimeDelta": self.timeDelta.value(),

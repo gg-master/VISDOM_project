@@ -59,6 +59,7 @@ class Network(QObject):
 
     @staticmethod
     def generate_version_code(data):
+        # Генерация кода, для отличия сообщений между собой
         symbols = list(string.ascii_uppercase + string.digits)
         data.update({'vcode': ''.join(random.sample(symbols, 6))})
         return data
@@ -76,14 +77,14 @@ class Network(QObject):
 
     async def start_client(self):
         try:
-            async with websockets.connect(self.addr) as socket:
+            async with websockets.connect(self.addr) as websocket:
                 # Проверяем данные, которые отправляются для регистрации
                 if not self.validate_reg_data():
                     raise Exception('Токен не прошел валидацию')
-                await socket.send(json.dumps(self.pi_data))
+                await websocket.send(json.dumps(self.pi_data))
 
                 # Ответ об успешном подключении
-                self.conn_resp = json.loads(await socket.recv())
+                self.conn_resp = json.loads(await websocket.recv())
                 print(self.conn_resp)
 
                 # Если не удалось подключиться к серверу, выдаем ошибку
@@ -92,7 +93,7 @@ class Network(QObject):
                     raise Exception(self.conn_resp['answer'])
 
                 # Начинаем общаться с сервером
-                async for message in socket:
+                async for message in websocket:
                     self.received_data = json.loads(message)
                     print(self.received_data)
 
@@ -105,24 +106,24 @@ class Network(QObject):
                                     self.last_vcode != self.send_data['vcode']:
                                 self.last_vcode = self.send_data['vcode']
 
-                                await socket.send(json.dumps(
+                                await websocket.send(json.dumps(
                                     {'status': 'sharing',
                                      'data': self.send_data}))
 
                             # Играем в пинг-понг, чтобы поддерживать
                             # соединение с сервером
-                            pong_waiter = await socket.ping()
+                            pong_waiter = await websocket.ping()
                             await pong_waiter
                             pong_waiter.result()
 
                         # Закрываем соединение с сервером
-                        await socket.send(
+                        await websocket.send(
                             json.dumps({'status': 'Close connection'}))
                         break
 
                     elif self.received_data['answer'] == \
                             'Pair has been established':
-                        await socket.send(json.dumps(
+                        await websocket.send(json.dumps(
                             {'status': 'I am ready to get'}))
 
                     elif self.received_data['answer'] == 'sharing':

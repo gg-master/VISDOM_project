@@ -14,7 +14,7 @@ from modules.myQElements import AutoClosedQWidget
 class ColorRangeWindow(AutoClosedQWidget):
     def __init__(self, parent):
         super().__init__(parent)
-        uic.loadUi(abspath(r'data\ui\color_range_settings_window.ui'), self)
+        uic.loadUi(abspath('data/ui/color_range_settings_window.ui'), self)
 
         self.camera = self.colors = None
         self.saved = self.is_saved_to_json = False
@@ -58,7 +58,7 @@ class ColorRangeWindow(AutoClosedQWidget):
     def load_colors(self):
         # Загружаем данные из файла
         try:
-            with open(abspath(r'data\settings\colors_settings.json'),
+            with open(abspath('data/settings/colors_settings.json'),
                       encoding='utf-8') as file:
                 self.colors = {i['name']: [i['hsv_min'], i['hsv_max']]
                                for i in json.load(file)['Colors']}
@@ -184,7 +184,7 @@ class ColorRangeWindow(AutoClosedQWidget):
 
         # Сохранение всех цветов в файл
         try:
-            with open(abspath(r'data\settings\colors_settings.json'), 'w',
+            with open(abspath('data/settings/colors_settings.json'), 'w',
                       encoding='utf-8') as file:
                 # Загружаем все цвета в json файл
                 json.dump({'Colors': [{'name': k,
@@ -337,7 +337,7 @@ class ColorRangeWindow(AutoClosedQWidget):
 class GraphWindow(AutoClosedQWidget):
     def __init__(self, parent):
         super().__init__(parent)
-        uic.loadUi(abspath(r'data\ui\graph_window.ui'), self)
+        uic.loadUi(abspath('data/ui/graph_window.ui'), self)
 
         self.graph = Graph(parent.analyzer, self.graphicsView, orig=False)
 
@@ -356,7 +356,7 @@ class GraphWindow(AutoClosedQWidget):
 class AnalyzerGraphSettingsWindow(AutoClosedQWidget):
     def __init__(self, parent):
         super().__init__(parent)
-        uic.loadUi(abspath(r'data\ui\analyzer_graph_settings_window.ui'), self)
+        uic.loadUi(abspath('data/ui/analyzer_graph_settings_window.ui'), self)
 
         self.initUI()
 
@@ -393,7 +393,7 @@ class AnalyzerGraphSettingsWindow(AutoClosedQWidget):
 class ServerSettingsWindow(AutoClosedQWidget):
     def __init__(self, parent):
         super().__init__(parent)
-        uic.loadUi(abspath(r'data\ui\server_settings_window.ui'), self)
+        uic.loadUi(abspath('data/ui/server_settings_window.ui'), self)
 
         self.initUI()
 
@@ -412,7 +412,7 @@ class ServerSettingsWindow(AutoClosedQWidget):
     def load_data(self):
         # Загружаем сохраненный токен и адрес сервера
         try:
-            with open(abspath(r'data\settings\server_settings.json'),
+            with open(abspath('data/settings/server_settings.json'),
                       encoding='utf-8') as file:
                 dct = json.load(file)
                 self.token.setText(dct['token'])
@@ -422,7 +422,7 @@ class ServerSettingsWindow(AutoClosedQWidget):
 
     def save_to_json(self):
         try:
-            with open(abspath(r'data\settings\server_settings.json'), 'w',
+            with open(abspath('data/settings/server_settings.json'), 'w',
                       encoding='utf-8') as file:
                 json.dump({'address': self.address.text(),
                            'token': self.token.text()}, file,
