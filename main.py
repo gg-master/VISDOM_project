@@ -54,7 +54,6 @@ class MainWindow(QMainWindow):
 
         # Загружаем сохраненные цвета
         self.load_colors()
-        # self.set_default_color_val()
 
         # Загружаем настройки дыхания
         self.load_breath_set()
@@ -85,6 +84,11 @@ class MainWindow(QMainWindow):
 
     def start_camera(self):
         # Запуск камеры
+
+        # Если камера была включена, то отключаем ее
+        if self.camera is not None:
+            self.camera.release()
+
         self.camera = MainWindowCamera(self, self.MainVideoBox)
         self.camera.changePixmap.connect(self.setImage)
         self.camera.start()
@@ -108,7 +112,7 @@ class MainWindow(QMainWindow):
     def load_colors(self):
         # Загружаем данные из файла
         try:
-            with open(abspath(r'data\settings\colors_settings.json'),
+            with open(abspath('data/settings/colors_settings.json'),
                       encoding='utf-8') as file:
                 self.colors = {i['name']: [i['hsv_min'], i['hsv_max']]
                                for i in json.load(file)['Colors']}
@@ -140,12 +144,6 @@ class MainWindow(QMainWindow):
 
         self.camera.set_current_colors(current_colors)
 
-    def set_default_color_val(self):
-        # Устанавливаем дефолтные значения, когда раскрывается список
-        for i in [self.curr_color_1, self.curr_color_2]:
-            if not i.currentText():
-                i.setCurrentText('Выберите цвет')
-
     def update_colors_in_comboBox(self):
         # # Предварительно отчищаем от всех значений
         self.sender().clear()
@@ -159,13 +157,12 @@ class MainWindow(QMainWindow):
                 lambda x: x != sender_name,
                 ['curr_color_1', 'curr_color_2']))[0])).currentText()
 
+        # Сперва добавляем дефолтное значение
+        self.sender().addItem('Выберите цвет')
+
         # Устанавливаем все зачения, которые не выбраны в другом comboBox
         for i in filter(lambda x: x != sec_col, self.colors.keys()):
             self.sender().addItem(i)
-
-        # Добавляем дефолтное значение
-        self.sender().insertItem(0, 'Выберите цвет')
-        # self.set_default_color_val()
 
     def set_coord_in_label(self):
         # Получаем последние координаты и устанавливаем их в лэйблы

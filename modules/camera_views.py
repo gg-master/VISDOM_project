@@ -105,6 +105,9 @@ class MainWindowCamera(QThread):
                             cv2.FONT_HERSHEY_SIMPLEX, 1, color_yellow, 2)
         return img
 
+    def release(self):
+        self.cap.release()
+
 
 class ColorRangeCamera(QThread):
     changePixmap = pyqtSignal(QImage)
