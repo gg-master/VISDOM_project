@@ -54,6 +54,7 @@ class MainWindow(QMainWindow):
 
         # Загружаем сохраненные цвета
         self.load_colors()
+        # self.set_default_color_val()
 
         # Загружаем настройки дыхания
         self.load_breath_set()
@@ -146,7 +147,7 @@ class MainWindow(QMainWindow):
                 i.setCurrentText('Выберите цвет')
 
     def update_colors_in_comboBox(self):
-        # Предварительно отчищаем от всех значений
+        # # Предварительно отчищаем от всех значений
         self.sender().clear()
 
         # Получаем название объект, у которого сработал сигнал
@@ -164,7 +165,7 @@ class MainWindow(QMainWindow):
 
         # Добавляем дефолтное значение
         self.sender().insertItem(0, 'Выберите цвет')
-        self.set_default_color_val()
+        # self.set_default_color_val()
 
     def set_coord_in_label(self):
         # Получаем последние координаты и устанавливаем их в лэйблы

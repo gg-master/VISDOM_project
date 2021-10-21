@@ -1,10 +1,22 @@
 import cv2
 import numpy as np
+from sys import platform
 
 from PyQt5.QtGui import QImage
 from PyQt5.QtCore import QThread, Qt, pyqtSignal
 
 color_yellow = (0, 255, 255)
+
+
+class Camera:
+    def __init__(self):
+        if platform == 'win32':
+            self.cap = cv2.VideoCapture(0 + cv2.CAP_DSHOW)
+        else:
+            self.cap = cv2.VideoCapture(-1)
+
+    def get_capture(self):
+        return self.cap
 
 
 class MainWindowCamera(QThread):
@@ -17,7 +29,7 @@ class MainWindowCamera(QThread):
         self.label = label
 
         # Подключаем камеру
-        self.cap = cv2.VideoCapture(0 + cv2.CAP_DSHOW)
+        self.cap = Camera().get_capture()
 
         # Список цветов для распознавния
         self.current_colors = {}
@@ -104,7 +116,8 @@ class ColorRangeCamera(QThread):
         self.label = label
 
         # Подключаем камеру
-        self.cap = cv2.VideoCapture(0 + cv2.CAP_DSHOW)
+        # self.cap = cv2.VideoCapture(cv2.CAP_ANY)
+        self.cap = parent.camera.cap
 
         # Устанавливаем начальные диапазоны
         self.hsv_min = np.array((0, 0, 0), np.uint8)

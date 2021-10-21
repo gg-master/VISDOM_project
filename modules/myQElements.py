@@ -25,6 +25,9 @@ class ComboBoxPDrDwSi(QComboBox):
                 return super().eventFilter(obj, event)
         return False
 
+    def setPlaceholderText(*args) -> None:
+        pass
+
 
 class AutoClosedQWidget(QWidget):
     closeWindowSignal = pyqtSignal()
