@@ -76,7 +76,6 @@ class Network(QObject):
         asyncio.run(self.start_client())
 
     async def start_client(self):
-        print('Started')
         try:
             async with websockets.connect(self.addr) as websocket:
                 # Проверяем данные, которые отправляются для регистрации

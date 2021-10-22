@@ -70,6 +70,18 @@
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
+          <property name="minimumSize">
+           <size>
+            <width>320</width>
+            <height>80</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>320</width>
+            <height>16777215</height>
+           </size>
+          </property>
           <property name="widgetResizable">
            <bool>true</bool>
           </property>
@@ -78,9 +90,15 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>305</width>
-             <height>70</height>
+             <width>301</width>
+             <height>390</height>
             </rect>
+           </property>
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_2">
             <item>
@@ -92,8 +110,7 @@
                </sizepolicy>
               </property>
               <property name="text">
-               <string>Справка 
- Тут будет много текста с пояснением о том как должны настраиваться ползунки</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-style:italic;&quot;&gt;Справка - Настройка диапазонов HSV. &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Настройка распознавания нужного цвета производится перемещением ползунков &amp;quot;Конечного диапазона&amp;quot; и &amp;quot;Начального диапазона&amp;quot;. &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600; font-style:italic;&quot;&gt;Перемещение каждого ползунка происходит до момента, когда необходимый объект, отображающийся в картинке с камеры, не станет полностью пропадать (становиться черным).&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-style:italic;&quot;&gt;Перемещение ползунков происходит в следующем порядке:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;1) Конечный H -&amp;gt; Начальный H.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;2) Конечный S -&amp;gt; Начальный S.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;3) Конечный V -&amp;gt; Начальный V.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Чтобы сохранить цвет необходимо нажать кнопку &lt;/span&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;&amp;quot;Сохранить цвет&amp;quot;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="wordWrap">
                <bool>true</bool>
