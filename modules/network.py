@@ -1,10 +1,13 @@
 import json
 import random
+import signal
 import socket
 import string
 import asyncio
+from _thread import start_new_thread
+
 import websockets
-from _thread import *
+from threading import Thread
 
 from PyQt5.QtCore import QObject, pyqtSignal
 
@@ -36,8 +39,13 @@ class Network(QObject):
         # Ответ после подключения
         self.conn_resp = None
 
+        self.websocket = None
+
+        self.loop = self.task = self.thread = None
+
         # Запускаем новый поток, т.к asyncio.run() является
         # блокирующей функцией
+        # self.start_async()
         if not is_test:
             start_new_thread(self.start_async, ())
         else:
@@ -72,10 +80,19 @@ class Network(QObject):
         return False
 
     def start_async(self):
-        # Запускаем асинхронную функцию для работы с сервером
+        # # Запускаем асинхронную функцию для работы с сервером
+        # self.loop = asyncio.new_event_loop()
+        # #
+        # # asyncio.set_event_loop(self.loop)
+        # #
+        # self.task = self.loop.create_task(self.start_client())
+        # self.thread = Thread(target=self.loop.run_forever)
+        # self.thread.start()
+        # # self.loop.run_until_complete(asyncio.wait([self.task]))
         asyncio.run(self.start_client())
 
     async def start_client(self):
+        print('Started')
         try:
             async with websockets.connect(self.addr) as websocket:
                 # Проверяем данные, которые отправляются для регистрации
@@ -91,15 +108,30 @@ class Network(QObject):
                 if self.conn_resp['answer'] != 'Successful registration of ' \
                                                'your client':
                     raise Exception(self.conn_resp['answer'])
-
+                # while not self.close_conn:
+                #     await asyncio.sleep(1)
+                #
                 # Начинаем общаться с сервером
-                async for message in websocket:
-                    self.received_data = json.loads(message)
+                while True:
+                    print('opened')
+                    if self.close_conn:
+                        print('disconnected')
+                        await websocket.send(
+                            json.dumps({'status': 'Close connection'}))
+                        break
+                    try:
+                        self.received_data = json.loads(
+                            await asyncio.wait_for(
+                                websocket.recv(), timeout=1.0))
+                    except asyncio.TimeoutError:
+                        print('excp')
+                        continue
                     print(self.received_data)
 
                     if self.received_data['answer'] == 'Start sharing':
                         # Главный цикл, который отправляет данные на сервер
                         while not self.close_conn:
+                            print(self.close_conn)
                             # Если данные обновились,
                             # то отправляем их на сервер
                             if self.send_data is not None and \
@@ -115,7 +147,7 @@ class Network(QObject):
                             pong_waiter = await websocket.ping()
                             await pong_waiter
                             pong_waiter.result()
-
+                        print('close conn')
                         # Закрываем соединение с сервером
                         await websocket.send(
                             json.dumps({'status': 'Close connection'}))
@@ -128,7 +160,7 @@ class Network(QObject):
 
                     elif self.received_data['answer'] == 'sharing':
                         print('received_data', self.received_data['data'])
-                    else:
+                    elif 'answer' in self.received_data:
                         # Если пришли какие-то другие команлы, то выдаем ошибку
                         raise Exception(self.received_data['answer'])
         except Exception as e:
@@ -139,6 +171,22 @@ class Network(QObject):
 
     def disconnect(self):
         self.close_conn = True
+        # future = asyncio.run_coroutine_threadsafe(
+        #     self.loop.create_task(self.websocket.close()).get_coro(), self.loop)
+
+        # print(self.task.cancelled())
+        # self.loop.call_soon_threadsafe(self.task.cancel)
+        # self.loop.call_soon_threadsafe(self.loop.stop)
+        # self.loop.call_soon_threadsafe(self.loop.close)
+        # self.loop.call_soon_threadsafe(self.websocket.close)
+        # print(self.task.cancelled())
+        # # self.task.cancel()
+        # # self.loop.close()
+        # self.thread.join()
+        # # print(self.task.cancelled())
+        # print(self.thread, self.loop, self.task)
+        # print(self.thread.is_alive())
+
 
     @staticmethod
     def validate_exception(exc):
@@ -151,4 +199,4 @@ class Network(QObject):
 
 
 if __name__ == '__main__':
-    net = Network(QObject(), 'ws://localhost:8080', 123, is_test=True)
+    net = Network(QObject(), 'ws://localhost:8080', 1234, is_test=True)
