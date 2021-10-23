@@ -114,7 +114,6 @@ class Network(QObject):
                     if self.received_data['answer'] == 'Start sharing':
                         # Главный цикл, который отправляет данные на сервер
                         while not self.close_conn:
-                            print(self.close_conn)
                             # Если данные обновились,
                             # то отправляем их на сервер
                             if self.send_data is not None and \
