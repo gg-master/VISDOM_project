@@ -241,6 +241,7 @@ class MainWindow(QMainWindow):
         self.statusbar.setStyleSheet(style)
 
     def set_logs_in_label(self):
+        # Отображаем данные о зафиксированном вдохе
         num = len(self.signals_logs)
         data = self.signals_logs[num]
         self.breath_logs_label.appendPlainText(
@@ -248,7 +249,7 @@ class MainWindow(QMainWindow):
             f"Upper delta: {data['upper']['delta']} \\ \n "
             f"Lower delta: {data['lower']['delta']}")
 
-        #
+        # Если открыто окно, то загружаем и туда новое значение
         if self.breath_logs_win:
             self.breath_logs_win.set_data(num, data)
 
@@ -267,8 +268,16 @@ class MainWindow(QMainWindow):
             self.set_statusBar_text('', 'background-color: transparent;')
 
     def fix_signal(self, data):
+        # Фиксируем сигнал
+
+        # Добавляем в логи
         self.signals_logs[len(self.signals_logs) + 1] = data
+
+        # Отображаем логи
         self.set_logs_in_label()
+
+        # Отправляем сигнал на сервер
+        self.main.send_signal()
 
 
 class Main:

@@ -232,7 +232,6 @@ class Analyzer(QObject):
                 'timer_interval': self.main_graph.timer.interval(),
                 'maxChunks': self.main_graph.maxChunks}
 
-
     def add_graph(self, graph):
         self.graphs.append(graph)
 
@@ -241,9 +240,11 @@ class Analyzer(QObject):
             self.graphs.remove(graph)
 
     def process_signal(self, data):
+        # Обрабатываем сигнал
         print(f'Work || {data}')
+
+        # Фиксируем сигнал
         self.parent.fix_signal(data)
-        self.parent.main.send_signal()
 
 
 class Graph:
