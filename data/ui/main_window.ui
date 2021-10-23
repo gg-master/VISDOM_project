@@ -523,6 +523,37 @@
          </widget>
         </item>
         <item>
+         <widget class="QPlainTextEdit" name="breath_logs_label">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>50</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>50</height>
+           </size>
+          </property>
+          <property name="frameShape">
+           <enum>QFrame::StyledPanel</enum>
+          </property>
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
+          <property name="plainText">
+           <string/>
+          </property>
+         </widget>
+        </item>
+        <item>
          <spacer name="verticalSpacer">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
@@ -588,6 +619,7 @@
      <string>Окна</string>
     </property>
     <addaction name="open_graph_inWindow"/>
+    <addaction name="open_logs_breath"/>
    </widget>
    <addaction name="Settings"/>
    <addaction name="open_graph_inWindow_list"/>
@@ -620,6 +652,11 @@
   <action name="restart_camera">
    <property name="text">
     <string>Перезагрузить камеру</string>
+   </property>
+  </action>
+  <action name="open_logs_breath">
+   <property name="text">
+    <string>Открыть логи дыхания</string>
    </property>
   </action>
  </widget>

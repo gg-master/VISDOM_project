@@ -85,10 +85,6 @@ class Analyzer(QObject):
         if len(y1_peaks[0]) < 3 and len(y2_peaks[0]) < 3:
             return
 
-        # print(f'{data[0][0]} - {data[-1][0]} // {y1_peaks[0]} '
-        #       f'({str(y1_max_p), str(y1_min_p)}), {y2_peaks[0]} '
-        #       f'({str(y2_max_p), str(y2_min_p)})')
-
         # Если и максимумов и минимумов больше, чем необходимо,
         # получаем последний всплеск
         if len(y1_max_p) > 2 and len(y1_min_p) > 1:
@@ -102,8 +98,7 @@ class Analyzer(QObject):
                 (len(y2_max_p) == 2 and len(y2_min_p) == 1):
 
             # Координата времени в которую был зафиксирован пик всплеска
-            p1_time = data[y1_min_p[0]][0]
-            p2_time = data[y2_min_p[0]][0]
+            p1_time, p2_time = data[y1_min_p[0]][0], data[y2_min_p[0]][0]
 
             # Преобразуем номера вершин в их координаты (y, x)
             y1_max_p = list(map(lambda x: (data[x][1], data[x][3]), y1_max_p))
@@ -123,10 +118,11 @@ class Analyzer(QObject):
                     normal_delta2[0] <= delta2 <= normal_delta2[1] and \
                     p1_time not in self.detected_peaks and \
                     p2_time not in self.detected_peaks:
-                # TODO отправлять сигнал о дыхании
-                print(f'Work, [{y1_max_p} / {y1_min_p}], '
-                      f'[{y2_max_p} / {y2_min_p}]')
-                self.send_signal()
+
+                self.process_signal(self.create_data(p1_time, delta1, delta2,
+                                                     is_y1_top,
+                                                     y1_max_p, y1_min_p,
+                                                     y2_max_p, y2_min_p))
                 # Сохраняем время вершины всплеска, чтобы несколько раз
                 # подряд не обрабатывать один и тот-же всплеск
                 self.detected_peaks.extend([p1_time, p2_time])
@@ -162,6 +158,26 @@ class Analyzer(QObject):
         peaks_min = (row_peaks > 0).nonzero()[0] + 1
         peaks_max = (row_peaks < 0).nonzero()[0] + 1
         return [peaks, peaks_max, peaks_min]
+
+    @staticmethod
+    def create_data(time, d1, d2, is_y1_top, max_p1, min_p1,
+                    max_p2, min_p2):
+        # Проебразуем данные о всплеске
+        data = {
+            'time': round(time, 2),
+            'upper': {
+                'delta': d1 if is_y1_top else d2,
+                'max': list(map(lambda x: x[0],
+                                max_p1 if is_y1_top else max_p2)),
+                'min': min_p1[0] if is_y1_top else min_p2[0]
+            }, 'lower': {
+                'delta': d2 if is_y1_top else d1,
+                'max': list(map(lambda x: x[0],
+                                max_p2 if is_y1_top else max_p1)),
+                'min': min_p2[0] if is_y1_top else min_p1[0]
+            }
+        }
+        return data
 
     def set_len_analyse_data(self, tm_delta):
         # Устанавливаем размер среза данных в зависимости от времени
@@ -216,6 +232,7 @@ class Analyzer(QObject):
                 'timer_interval': self.main_graph.timer.interval(),
                 'maxChunks': self.main_graph.maxChunks}
 
+
     def add_graph(self, graph):
         self.graphs.append(graph)
 
@@ -223,7 +240,9 @@ class Analyzer(QObject):
         if graph in self.graphs:
             self.graphs.remove(graph)
 
-    def send_signal(self):
+    def process_signal(self, data):
+        print(f'Work || {data}')
+        self.parent.fix_signal(data)
         self.parent.main.send_signal()
 
 

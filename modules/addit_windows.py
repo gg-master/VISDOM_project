@@ -491,3 +491,20 @@ class ServerSettingsWindow(AutoClosedQWidget):
 
         self.save_to_json()
         super().closeEvent(a0)
+
+
+class BreathLogsWindow(AutoClosedQWidget):
+    def __init__(self, parent):
+        super().__init__(parent)
+        uic.loadUi(abspath('data/ui/breath_logs_window.ui'), self)
+
+        self.initUI()
+
+    def initUI(self):
+        # Загружаем ранее сохраненные логи
+        for num, data in self.parent.signals_logs.items():
+            self.breath_logs_label.appendPlainText(f"{num} | {data}")
+
+    def set_data(self, num, data):
+        # Добавляем новые логи
+        self.breath_logs_label.appendPlainText(f"{num} | {data}")

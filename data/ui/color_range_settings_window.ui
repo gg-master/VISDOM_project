@@ -79,8 +79,11 @@
           <property name="maximumSize">
            <size>
             <width>320</width>
-            <height>16777215</height>
+            <height>100</height>
            </size>
+          </property>
+          <property name="frameShape">
+           <enum>QFrame::Panel</enum>
           </property>
           <property name="widgetResizable">
            <bool>true</bool>

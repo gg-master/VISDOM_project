@@ -30,13 +30,17 @@ class MainWindow(QMainWindow):
         self.main = main
 
         self.camera = self.color_range_wind = \
-            self.graph_window = self.an_gr_set = self.server_set = None
+            self.graph_window = self.an_gr_set = \
+            self.server_set = self.breath_logs_win = None
 
         self.analyzer = Analyzer(self)
         self.analyzer.newCoordinatesSignal.connect(self.set_coord_in_label)
 
         # Цвета, доступные для выбора
         self.colors = {}
+
+        # Словарь со всеми вдохами за время работы программы
+        self.signals_logs = {}
 
         self.initUI()
 
@@ -69,6 +73,7 @@ class MainWindow(QMainWindow):
             self.open_analyzer_graph_settings_window)
         self.restart_camera.triggered.connect(self.start_camera)
         self.server_settings.triggered.connect(self.open_server_sett_window)
+        self.open_logs_breath.triggered.connect(self.open_breath_logs_window)
 
         # Изменение настроек в главном окне
         for i in [self.curr_color_1, self.curr_color_2]:
@@ -198,6 +203,11 @@ class MainWindow(QMainWindow):
         self.server_set = ServerSettingsWindow(self)
         self.server_set.show()
 
+    def open_breath_logs_window(self):
+        from modules.addit_windows import BreathLogsWindow
+        self.breath_logs_win = BreathLogsWindow(self)
+        self.breath_logs_win.show()
+
     def save_breath_sett_to_json(self):
         # Сохраняем все настройки в файл
         try:
@@ -230,6 +240,18 @@ class MainWindow(QMainWindow):
         self.statusbar.setText(text)
         self.statusbar.setStyleSheet(style)
 
+    def set_logs_in_label(self):
+        num = len(self.signals_logs)
+        data = self.signals_logs[num]
+        self.breath_logs_label.appendPlainText(
+            f"{num} | Time: {data['time']}\n "
+            f"Upper delta: {data['upper']['delta']} \\ \n "
+            f"Lower delta: {data['lower']['delta']}")
+
+        #
+        if self.breath_logs_win:
+            self.breath_logs_win.set_data(num, data)
+
     def check_network_state(self, exp=None):
         # Проверка состояния соединения
         # Если есть ошибка, то выводим ее
@@ -243,6 +265,10 @@ class MainWindow(QMainWindow):
                                     'color: rgb(255, 255, 255)')
         else:
             self.set_statusBar_text('', 'background-color: transparent;')
+
+    def fix_signal(self, data):
+        self.signals_logs[len(self.signals_logs) + 1] = data
+        self.set_logs_in_label()
 
 
 class Main:
