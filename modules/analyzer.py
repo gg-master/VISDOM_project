@@ -344,7 +344,7 @@ class Graph:
             # Если не сохраняем весь массив
             if not self.save_full_data:
                 # Обвноялвяем массив
-                self.data = np.zeros((self.data.shape[0], 5))
+                self.data = np.zeros((self.maxChunks, 5))
 
                 # Перемащаем в него копию последних 1/4 значений
                 self.data[:tmp.shape[0] // 4] = tmp[-tmp.shape[0] // 4:]
