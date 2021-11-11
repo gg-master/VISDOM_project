@@ -4,8 +4,9 @@ from sys import platform
 
 from PyQt5.QtGui import QImage
 from PyQt5.QtCore import QThread, Qt, pyqtSignal
+from PyQt5.QtWidgets import QLabel
 
-color_yellow = (0, 255, 255)
+YELLOW = (0, 255, 255)
 
 
 class Camera:
@@ -15,37 +16,33 @@ class Camera:
         else:
             self.cap = cv2.VideoCapture(-1)
 
-    def get_capture(self):
+    def get_capture(self) -> cv2.VideoCapture:
         return self.cap
 
 
 class MainWindowCamera(QThread):
     changePixmap = pyqtSignal(QImage)
 
-    def __init__(self, parent, label, *args, **kwargs):
+    def __init__(self, parent, label: QLabel):
         super().__init__(parent)
 
         # Лэйбл, на котором будет отображаться картинка
         self.label = label
 
         # Подключаем камеру
-        self.cap = Camera().get_capture()
+        self.cap: cv2.VideoCapture = Camera().get_capture()
 
         # Список цветов для распознавния
         self.current_colors = {}
 
-        # Максимальное количество обнаруживаемых цветов.
-        # UNUSED
-        self.max_detected_colors = 2
-
-    def set_current_colors(self, colors_array):
+    def set_current_colors(self, colors_array: dict) -> None:
         # Формируем новый список цветов для распознавания
         new_colors = {k: [np.array(v[0], np.uint8),
                           np.array(v[1], np.uint8)]
                       for k, v in colors_array.items()}
         self.current_colors = new_colors
 
-    def run(self):
+    def run(self) -> None:
         # Пока камера работает получаем изображение и отображаем его
         while self.cap.isOpened() and self.label:
             # Считывание изображения
@@ -73,7 +70,7 @@ class MainWindowCamera(QThread):
             except Exception:
                 pass
 
-    def get_img_with_objects(self, img):
+    def get_img_with_objects(self, img: np.ndarray) -> np.ndarray:
         img = cv2.flip(img, 1)  # отражение кадра вдоль оси Y
         hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
@@ -100,19 +97,19 @@ class MainWindowCamera(QThread):
                     # print('camera_views.py:100 // exp //', e)
                     pass
 
-                cv2.circle(img, (x, y), 5, color_yellow, 2)
+                cv2.circle(img, (x, y), 5, YELLOW, 2)
                 cv2.putText(img, f"{x}-{y}", (x + 10, y - 10),
-                            cv2.FONT_HERSHEY_SIMPLEX, 1, color_yellow, 2)
+                            cv2.FONT_HERSHEY_SIMPLEX, 1, YELLOW, 2)
         return img
 
-    def release(self):
+    def release(self) -> None:
         self.cap.release()
 
 
 class ColorRangeCamera(QThread):
     changePixmap = pyqtSignal(QImage)
 
-    def __init__(self, parent, label, *args, **kwargs):
+    def __init__(self, parent, label: QLabel):
         super().__init__(parent)
 
         # Лэйбл, на котором будет отображаться картинка
@@ -120,17 +117,17 @@ class ColorRangeCamera(QThread):
 
         # Подключаем камеру
         # self.cap = cv2.VideoCapture(cv2.CAP_ANY)
-        self.cap = parent.camera.cap
+        self.cap: cv2.VideoCapture = parent.camera.cap
 
         # Устанавливаем начальные диапазоны
         self.hsv_min = np.array((0, 0, 0), np.uint8)
         self.hsv_max = np.array((255, 255, 255), np.uint8)
 
-    def set_hmin_hmax(self, hsv_min, hsv_max):
+    def set_hmin_hmax(self, hsv_min: list, hsv_max: list) -> None:
         self.hsv_min = np.array(hsv_min, np.uint8)
         self.hsv_max = np.array(hsv_max, np.uint8)
 
-    def run(self):
+    def run(self) -> None:
         # Пока камера работает получаем изображение и отображаем его
         while self.cap.isOpened() and self.label:
             # Считывание изображения

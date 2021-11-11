@@ -13,7 +13,7 @@ class ComboBoxPDrDwSi(QComboBox):
         QComboBox.__init__(self, parent)
         self.installEventFilter(self)
 
-    def eventFilter(self, obj, event):
+    def eventFilter(self, obj: QObject, event: QEvent) -> bool:
         # Обрабатываем события
         if event.type() == QEvent.MouseButtonPress:
             mouse_event = QMouseEvent(event)

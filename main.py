@@ -27,7 +27,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         uic.loadUi(abspath('data/ui/main_window.ui'), self)
 
-        self.main = main
+        self.main: Main = main
 
         self.camera = self.color_range_wind = \
             self.graph_window = self.an_gr_set = \
@@ -52,7 +52,7 @@ class MainWindow(QMainWindow):
         # Первичная проверка состояния
         self.check_network_state()
 
-    def initUI(self):
+    def initUI(self) -> None:
         # Включаем камеру
         self.start_camera()
 
@@ -87,7 +87,7 @@ class MainWindow(QMainWindow):
                   self.minDeltaBot, self.maxDeltaBot]:
             i.valueChanged.connect(self.set_breath_sett)
 
-    def start_camera(self):
+    def start_camera(self) -> None:
         # Запуск камеры
 
         # Если камера была включена, то отключаем ее
@@ -98,7 +98,7 @@ class MainWindow(QMainWindow):
         self.camera.changePixmap.connect(self.setImage)
         self.camera.start()
 
-    def load_breath_set(self):
+    def load_breath_set(self) -> None:
         # Загружаем и устанавливаем все значения для дыхания из файла
         try:
             with open(abspath('data/settings/breath_rec_settings.json'),
@@ -114,7 +114,7 @@ class MainWindow(QMainWindow):
         except Exception:
             pass
 
-    def load_colors(self):
+    def load_colors(self) -> None:
         # Загружаем данные из файла
         try:
             with open(abspath('data/settings/colors_settings.json'),
@@ -124,18 +124,18 @@ class MainWindow(QMainWindow):
         except Exception:
             pass
 
-    def set_analyzer_graph_settings(self, data):
+    def set_analyzer_graph_settings(self, data: dict) -> None:
         # Изменяем найтройки анализатора
         self.analyzer.set_new_settings(**data)
 
-    def set_breath_sett(self):
+    def set_breath_sett(self) -> None:
         # Получаем значения для анализа из окна
         self.analyzer.set_new_settings(
             timeDelta=self.timeDelta.value(),
             delta_top=[self.minDeltaTop.value(), self.maxDeltaTop.value()],
             delta_bot=[self.minDeltaBot.value(), self.maxDeltaBot.value()])
 
-    def set_current_colors(self):
+    def set_current_colors(self) -> None:
         # Устанавливаем выбранные цвета в распознавание камеры
         current_colors = {i: self.colors[i] for i in
                           map(lambda x: x.currentText(),
@@ -149,7 +149,7 @@ class MainWindow(QMainWindow):
 
         self.camera.set_current_colors(current_colors)
 
-    def update_colors_in_comboBox(self):
+    def update_colors_in_comboBox(self) -> None:
         # # Предварительно отчищаем от всех значений
         self.sender().clear()
 
@@ -169,7 +169,7 @@ class MainWindow(QMainWindow):
         for i in filter(lambda x: x != sec_col, self.colors.keys()):
             self.sender().addItem(i)
 
-    def set_coord_in_label(self):
+    def set_coord_in_label(self) -> None:
         # Получаем последние координаты и устанавливаем их в лэйблы
         y1, y2, x1, x2 = map(lambda x: str(int(x)),
                              self.analyzer.get_last_coordinates())
@@ -179,36 +179,36 @@ class MainWindow(QMainWindow):
         self.val_y2.setText(y2)
 
     @pyqtSlot(QImage)
-    def setImage(self, image):
+    def setImage(self, image: QImage) -> None:
         self.MainVideoBox.setPixmap(QPixmap.fromImage(image))
 
-    def open_color_range_window(self):
+    def open_color_range_window(self) -> None:
         # Открываем окно для настройки цветов
         from modules.addit_windows import ColorRangeWindow
         self.color_range_wind = ColorRangeWindow(self)
         self.color_range_wind.show()
 
-    def open_graph_in_window(self):
+    def open_graph_in_window(self) -> None:
         from modules.addit_windows import GraphWindow
         self.graph_window = GraphWindow(self)
         self.graph_window.show()
 
-    def open_analyzer_graph_settings_window(self):
+    def open_analyzer_graph_settings_window(self) -> None:
         from modules.addit_windows import AnalyzerGraphSettingsWindow
         self.an_gr_set = AnalyzerGraphSettingsWindow(self)
         self.an_gr_set.show()
 
-    def open_server_sett_window(self):
+    def open_server_sett_window(self) -> None:
         from modules.addit_windows import ServerSettingsWindow
         self.server_set = ServerSettingsWindow(self)
         self.server_set.show()
 
-    def open_breath_logs_window(self):
+    def open_breath_logs_window(self) -> None:
         from modules.addit_windows import BreathLogsWindow
         self.breath_logs_win = BreathLogsWindow(self)
         self.breath_logs_win.show()
 
-    def save_breath_sett_to_json(self):
+    def save_breath_sett_to_json(self) -> None:
         # Сохраняем все настройки в файл
         try:
             with open(abspath('data/settings/breath_rec_settings.json'), 'w',
@@ -236,11 +236,11 @@ class MainWindow(QMainWindow):
 
         super().closeEvent(a0)
 
-    def set_statusBar_text(self, text, style):
+    def set_status_bar_text(self, text: str, style: str) -> None:
         self.statusbar.setText(text)
         self.statusbar.setStyleSheet(style)
 
-    def set_logs_in_label(self):
+    def set_logs_in_label(self) -> None:
         # Отображаем данные о зафиксированном вдохе
         num = len(self.signals_logs)
         data = self.signals_logs[num]
@@ -253,23 +253,21 @@ class MainWindow(QMainWindow):
         if self.breath_logs_win:
             self.breath_logs_win.set_data(num, data)
 
-    def check_network_state(self, exp=None):
+    def check_network_state(self, exp: str = None) -> None:
         # Проверка состояния соединения
         # Если есть ошибка, то выводим ее
         if exp is not None:
-            self.set_statusBar_text(exp, 'background-color: rgb(170, 0, 0); '
+            self.set_status_bar_text(exp, 'background-color: rgb(170, 0, 0); '
                                          'color: rgb(255, 255, 255)')
             return
         if not self.main.is_network_open():
-            self.set_statusBar_text('Нет соединения с сервером',
+            self.set_status_bar_text('Нет соединения с сервером',
                                     'background-color: rgb(170, 0, 0); '
                                     'color: rgb(255, 255, 255)')
         else:
-            self.set_statusBar_text('', 'background-color: transparent;')
+            self.set_status_bar_text('', 'background-color: transparent;')
 
-    def fix_signal(self, data):
-        # Фиксируем сигнал
-
+    def catch_signal(self, data):
         # Добавляем в логи
         self.signals_logs[len(self.signals_logs) + 1] = data
 
@@ -281,7 +279,7 @@ class MainWindow(QMainWindow):
 
 
 class Main:
-    def __init__(self):
+    def __init__(self) -> None:
         self.net = None
 
         # Создаем приложение и запускаем главное окно
@@ -290,19 +288,19 @@ class Main:
         self.main_window.show()
         sys.exit(app.exec())
 
-    def send_signal(self):
+    def send_signal(self) -> None:
         # Если открыто соединение с сервером, то отправляем сигнал
         if self.is_network_open():
             self.net.set_send_get_recv({'signal': True})
 
-    def is_network_open(self):
+    def is_network_open(self) -> bool:
         # Если имеется созданное соединени и оно не закрыто, то считаем,
         # что мы соединены с сервером
         if self.net is not None and not self.net.close_conn:
             return True
         return False
 
-    def create_network(self, address, token):
+    def create_network(self, address: str, token: str) -> None:
         # Подключение к серверу
         self.net = Network(self.main_window, address, token)
 
