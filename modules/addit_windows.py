@@ -320,7 +320,7 @@ class ColorRangeWindow(AutoClosedQWidget):
         их в камеру
         :return:
         """
-        sname = self.sender().objectName()
+        sname: str = self.sender().objectName()
         getattr(self, f"{sname[:sname.rfind('_')]}_val").setText(
             str(self.sender().value()))
         self.set_camera_hsv_colors()
@@ -345,7 +345,7 @@ class GraphWindow(AutoClosedQWidget):
         # Добавляем в список графиков, чтобы одновременно обновлять кривые
         self.parent.analyzer.add_graph(self.graph)
 
-    def destroy_graph(self):
+    def destroy_graph(self) -> None:
         self.parent.analyzer.remove_graph(self.graph)
         self.graph = None
 
@@ -361,7 +361,7 @@ class AnalyzerGraphSettingsWindow(AutoClosedQWidget):
 
         self.initUI()
 
-    def initUI(self):
+    def initUI(self) -> None:
         self.load_data()
 
         self.save_full_data.stateChanged.connect(self.set_new_settings)
@@ -370,7 +370,7 @@ class AnalyzerGraphSettingsWindow(AutoClosedQWidget):
         self.window_len.valueChanged.connect(self.set_new_settings)
         self.maxChunks.valueChanged.connect(self.set_new_settings)
 
-    def load_data(self):
+    def load_data(self) -> None:
         # Загружаем данные из приложения
         for k, v in self.parent.analyzer.get_current_settings().items():
             if k == 'save_full_data':
@@ -381,7 +381,7 @@ class AnalyzerGraphSettingsWindow(AutoClosedQWidget):
                 except AttributeError:
                     continue
 
-    def set_new_settings(self):
+    def set_new_settings(self) -> None:
         # Устанавливаем настройки в анализатор и графики
         self.parent.set_analyzer_graph_settings({
             'window_len': self.window_len.value(),
@@ -398,7 +398,7 @@ class ServerSettingsWindow(AutoClosedQWidget):
 
         self.initUI()
 
-    def initUI(self):
+    def initUI(self) -> None:
         self.load_data()
 
         self.connect_btn.clicked.connect(self.connect_to_server)
@@ -410,7 +410,7 @@ class ServerSettingsWindow(AutoClosedQWidget):
             self.parent.main.net.exceptionSignal.connect(self.show_net_exc)
             self.set_connect_flag(True)
 
-    def load_data(self):
+    def load_data(self) -> None:
         # Загружаем сохраненный токен и адрес сервера
         try:
             with open(abspath('data/settings/server_settings.json'),
@@ -421,7 +421,7 @@ class ServerSettingsWindow(AutoClosedQWidget):
         except Exception:
             pass
 
-    def save_to_json(self):
+    def save_to_json(self) -> None:
         try:
             with open(abspath('data/settings/server_settings.json'), 'w',
                       encoding='utf-8') as file:
@@ -431,22 +431,22 @@ class ServerSettingsWindow(AutoClosedQWidget):
         except Exception:
             pass
 
-    def set_connect_flag(self, flag):
+    def set_connect_flag(self, flag: bool) -> None:
         self.conn.setChecked(flag)
         self.conn.setEnabled(flag)
 
         self.disc.setChecked(not flag)
         self.disc.setEnabled(not flag)
 
-    def set_message(self, text='', bg_color='transparent',
-                    text_color=(0, 0, 0)):
+    def set_message(self, text: str = '', bg_color: str = 'transparent',
+                    text_color: tuple = (0, 0, 0)) -> None:
         self.statusBar.setText(text)
         self.statusBar.setStyleSheet(
             f'background-color: '
             f'{f"rgb{bg_color}" if bg_color != "transparent" else bg_color}; '
             f'color: rgb{text_color}')
 
-    def connect_to_server(self):
+    def connect_to_server(self) -> None:
         # Простая валидация данных
         if not self.address.text():
             self.set_message('Введите адрес!', bg_color='(200, 0, 0)',
@@ -472,13 +472,13 @@ class ServerSettingsWindow(AutoClosedQWidget):
             # подключении/отключении соединения
             self.set_connect_flag(True)
 
-    def disc_from_server(self):
+    def disc_from_server(self) -> None:
         # Отключаемся от сервера
         if self.parent.main.is_network_open():
             self.parent.main.net.disconnect()
             self.set_connect_flag(False)
 
-    def show_net_exc(self, exc):
+    def show_net_exc(self, exc: str) -> None:
         # Отображаем ошибки, которые возвращает Network
         self.set_connect_flag(False)
         self.set_message(exc, bg_color='(255, 85, 0)',
@@ -500,11 +500,11 @@ class BreathLogsWindow(AutoClosedQWidget):
 
         self.initUI()
 
-    def initUI(self):
+    def initUI(self) -> None:
         # Загружаем ранее сохраненные логи
         for num, data in self.parent.signals_logs.items():
             self.breath_logs_label.appendPlainText(f"{num} | {data}")
 
-    def set_data(self, num, data):
+    def set_data(self, num: int, data: dict) -> None:
         # Добавляем новые логи
         self.breath_logs_label.appendPlainText(f"{num} | {data}")
