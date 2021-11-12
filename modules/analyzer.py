@@ -172,7 +172,7 @@ class Graph:
         """ Имеются ли на графике какие-либо кривые"""
         return bool(self.curves)
 
-    def set_new_settings(self, **settings: dict[str, object]) -> None:
+    def set_new_settings(self, **settings: [str, Any]) -> None:
         """ Обновляем настройки графика"""
         for k, v in settings.items():
             if k == 'timer_interval':
@@ -366,7 +366,7 @@ class Analyzer(QObject):
         # Устанавливаем размер среза данных в зависимости от времени
         return tm_delta // self.graphs[0].timer.interval()
 
-    def set_new_settings(self, **settings: Dict[str, Any]) -> None:
+    def set_new_settings(self, **settings: [str, Any]) -> None:
         # Обновляем настройки анализатора
         for k, v in settings.items():
             if k == 'timeDelta':
