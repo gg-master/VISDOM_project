@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 from sys import platform
-import threading
+from _thread import start_new_thread
 
 from PyQt5.QtGui import QImage
 from PyQt5.QtCore import QThread, Qt, pyqtSignal
@@ -10,17 +10,19 @@ from PyQt5.QtWidgets import QLabel
 YELLOW = (0, 255, 255)
 
 
-class Camera(threading.Thread):
+class Camera:
     def __init__(self):
         super(Camera, self).__init__()
+        self.cap = self.last_frame = None
+        self.connect_to_device()
+        start_new_thread(self.run, ())
+        # self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 3)
+
+    def connect_to_device(self):
         if platform == 'win32':
             self.cap = cv2.VideoCapture(0 + cv2.CAP_DSHOW)
         else:
             self.cap = cv2.VideoCapture(-1)
-
-        self.last_frame = None
-        self.start()
-        # self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 3)
 
     def get_capture(self) -> cv2.VideoCapture:
         return self.cap
@@ -34,6 +36,10 @@ class Camera(threading.Thread):
     def release(self):
         self.cap.release()
 
+    def restart(self):
+        self.release()
+        self.connect_to_device()
+
     def run(self):
         while self.cap.isOpened():
             ret, self.last_frame = self.cap.read()
@@ -42,14 +48,14 @@ class Camera(threading.Thread):
 class MainWindowCamera(QThread):
     changePixmap = pyqtSignal(QImage)
 
-    def __init__(self, parent, label: QLabel):
+    def __init__(self, parent, label: QLabel, camera):
         super().__init__(parent)
 
         # Лэйбл, на котором будет отображаться картинка
         self.label = label
 
         # Подключаем камеру
-        self.cap = Camera()
+        self.cap = camera
 
         # Список цветов для распознавния
         self.current_colors = {}
