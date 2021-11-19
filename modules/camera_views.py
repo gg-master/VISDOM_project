@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 from sys import platform
+import threading
 
 from PyQt5.QtGui import QImage
 from PyQt5.QtCore import QThread, Qt, pyqtSignal
@@ -9,16 +10,33 @@ from PyQt5.QtWidgets import QLabel
 YELLOW = (0, 255, 255)
 
 
-class Camera:
+class Camera(threading.Thread):
     def __init__(self):
+        super(Camera, self).__init__()
         if platform == 'win32':
             self.cap = cv2.VideoCapture(0 + cv2.CAP_DSHOW)
         else:
             self.cap = cv2.VideoCapture(-1)
-        self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 3)
+
+        self.last_frame = None
+        self.start()
+        # self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 3)
 
     def get_capture(self) -> cv2.VideoCapture:
         return self.cap
+
+    def frame(self):
+        return self.last_frame
+
+    def isOpened(self):
+        return self.last_frame is not None
+
+    def release(self):
+        self.cap.release()
+
+    def run(self):
+        while self.cap.isOpened():
+            ret, self.last_frame = self.cap.read()
 
 
 class MainWindowCamera(QThread):
@@ -31,7 +49,7 @@ class MainWindowCamera(QThread):
         self.label = label
 
         # Подключаем камеру
-        self.cap: cv2.VideoCapture = Camera().get_capture()
+        self.cap = Camera()
 
         # Список цветов для распознавния
         self.current_colors = {}
@@ -47,10 +65,7 @@ class MainWindowCamera(QThread):
         # Пока камера работает получаем изображение и отображаем его
         while self.cap.isOpened() and self.label:
             # Считывание изображения
-            flag, img = self.cap.read()
-
-            if not flag:
-                break
+            img = self.cap.frame()
 
             # Получаем картикну с отмеченными распознанными объектами
             img = self.get_img_with_objects(img)
@@ -118,7 +133,7 @@ class ColorRangeCamera(QThread):
 
         # Подключаем камеру
         # self.cap = cv2.VideoCapture(cv2.CAP_ANY)
-        self.cap: cv2.VideoCapture = parent.camera.cap
+        self.cap: Camera = parent.camera.cap
 
         # Устанавливаем начальные диапазоны
         self.hsv_min = np.array((0, 0, 0), np.uint8)
@@ -132,10 +147,7 @@ class ColorRangeCamera(QThread):
         # Пока камера работает получаем изображение и отображаем его
         while self.cap.isOpened() and self.label:
             # Считывание изображения
-            status, img = self.cap.read()
-
-            if not status:
-                break
+            img = self.cap.frame()
 
             # Преобразование в hsv картинку
             hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
