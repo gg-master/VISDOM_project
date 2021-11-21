@@ -15,7 +15,9 @@ class Camera:
             self.cap = cv2.VideoCapture(0 + cv2.CAP_DSHOW)
         else:
             self.cap = cv2.VideoCapture(-1)
-        self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 3)
+
+        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
 
     def get_capture(self) -> cv2.VideoCapture:
         return self.cap
