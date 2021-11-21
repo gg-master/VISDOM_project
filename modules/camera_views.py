@@ -19,7 +19,6 @@ class Camera:
         start_new_thread(self.run, ())
 
     def connect_to_device(self):
-        self.release()
         if platform == 'win32':
             self.cap = cv2.VideoCapture(0 + cv2.CAP_DSHOW)
         else:
@@ -40,6 +39,7 @@ class Camera:
 
     def restart(self):
         self.is_restarted = True
+        self.release()
         self.connect_to_device()
         start_new_thread(self.run, ())
         self.is_restarted = False
