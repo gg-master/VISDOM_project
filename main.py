@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import QApplication, QMainWindow
 
 from modules.tools import abspath
 from modules.analyzer import Analyzer
-from modules.camera_views import MainWindowCamera, Camera
+from modules.camera_views import MainWindowCamera
 from modules.network import Network
 
 
@@ -54,10 +54,7 @@ class MainWindow(QMainWindow):
 
     def initUI(self) -> None:
         # Включаем камеру
-        self.camera = MainWindowCamera(self, self.MainVideoBox,
-                                       self.main.camera)
-        self.camera.changePixmap.connect(self.setImage)
-        self.camera.start()
+        self.start_camera()
 
         # Загружаем сохраненные цвета
         self.load_colors()
@@ -74,7 +71,7 @@ class MainWindow(QMainWindow):
             self.open_graph_in_window)
         self.analyzer_graph_settings.triggered.connect(
             self.open_analyzer_graph_settings_window)
-        self.restart_camera.triggered.connect(self.restart_cam)
+        self.restart_camera.triggered.connect(self.start_camera)
         self.server_settings.triggered.connect(self.open_server_sett_window)
         self.open_logs_breath.triggered.connect(self.open_breath_logs_window)
 
@@ -90,8 +87,16 @@ class MainWindow(QMainWindow):
                   self.minDeltaBot, self.maxDeltaBot]:
             i.valueChanged.connect(self.set_breath_sett)
 
-    def restart_cam(self) -> None:
-        self.main.camera.restart()
+    def start_camera(self) -> None:
+        # Запуск камеры
+
+        # Если камера была включена, то отключаем ее
+        if self.camera is not None:
+            self.camera.release()
+
+        self.camera = MainWindowCamera(self, self.MainVideoBox)
+        self.camera.changePixmap.connect(self.setImage)
+        self.camera.start()
 
     def load_breath_set(self) -> None:
         # Загружаем и устанавливаем все значения для дыхания из файла
@@ -229,7 +234,6 @@ class MainWindow(QMainWindow):
         if self.main.is_network_open():
             self.main.net.disconnect()
 
-        self.main.camera.release()
         super().closeEvent(a0)
 
     def set_status_bar_text(self, text: str, style: str) -> None:
@@ -277,8 +281,6 @@ class MainWindow(QMainWindow):
 class Main:
     def __init__(self) -> None:
         self.net = None
-
-        self.camera = Camera()
 
         # Создаем приложение и запускаем главное окно
         app = QApplication(sys.argv)
