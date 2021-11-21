@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 import sys
 import json
+import threading
+import time
 
 from PyQt5 import uic, QtGui
 from PyQt5.QtCore import pyqtSlot, pyqtSignal, QTimer
@@ -32,6 +34,7 @@ class MainWindow(QMainWindow):
         self.camera = self.color_range_wind = \
             self.graph_window = self.an_gr_set = \
             self.server_set = self.breath_logs_win = None
+        self.fps_timer = None
 
         self.analyzer = Analyzer(self)
         self.analyzer.newCoordinatesSignal.connect(self.set_coord_in_label)
@@ -133,6 +136,10 @@ class MainWindow(QMainWindow):
             delta_top=[self.minDeltaTop.value(), self.maxDeltaTop.value()],
             delta_bot=[self.minDeltaBot.value(), self.maxDeltaBot.value()])
 
+    def drop_curr_col(self):
+        self.analyzer.update_colors({})
+        self.camera.set_current_colors({})
+
     def set_current_colors(self) -> None:
         # Устанавливаем выбранные цвета в распознавание камеры
         current_colors = {i: self.colors[i] for i in
@@ -180,9 +187,18 @@ class MainWindow(QMainWindow):
     def setImage(self, image: QImage) -> None:
         self.MainVideoBox.setPixmap(QPixmap.fromImage(image))
 
-    def open_color_range_window(self) -> None:
+    def close_extra_win(self):
+        self.drop_curr_col()
         self.camera.terminate()
-        # self.setUpdatesEnabled(False)
+
+        [i.close() for i in [self.graph_window, self.an_gr_set,
+                             self.server_set, self.breath_logs_win]
+         if i is not None and i.isVisible()]
+
+    def open_color_range_window(self) -> None:
+        # Закрываем окна для оптимизации
+        self.close_extra_win()
+
         # Открываем окно для настройки цветов
         from modules.addit_windows import ColorRangeWindow
         self.color_range_wind = ColorRangeWindow(self)
@@ -230,11 +246,7 @@ class MainWindow(QMainWindow):
         self.save_breath_sett_to_json()
         self.closeWindowSignal.emit()
 
-        # При закрытии приложения отключаемся от сервера
-        if self.main.is_network_open():
-            self.main.net.disconnect()
-
-        self.main.camera.release()
+        self.main.end_process()
         super().closeEvent(a0)
 
     def set_status_bar_text(self, text: str, style: str) -> None:
@@ -310,6 +322,12 @@ class Main:
         # Подключаем сигнал с ошибками к главному окно для их отображения
         self.net.exceptionSignal.connect(
             self.main_window.check_network_state)
+
+    def end_process(self):
+        # При закрытии приложения отключаемся от сервера
+        if self.is_network_open():
+            self.net.disconnect()
+        self.camera.disconnect_camera()
 
 
 if __name__ == '__main__':

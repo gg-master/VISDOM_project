@@ -44,7 +44,7 @@ class Graph:
         # и обновлять данные в графике
         self.timer = pg.QtCore.QTimer()
         self.timer.timeout.connect(self.update)
-        self.timer.start(50)
+        self.timer.start(100)
 
         # Если создается график в окне, и нам необходимо в нем отображать
         # данные главного графика, копируем значения из главного графика

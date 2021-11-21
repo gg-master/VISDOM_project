@@ -1,22 +1,41 @@
 import cv2
 import numpy as np
 from sys import platform
-from _thread import start_new_thread, exit_thread
+import threading
+from data.settings.settings import *
 
 from PyQt5.QtGui import QImage
 from PyQt5.QtCore import QThread, Qt, pyqtSignal
 from PyQt5.QtWidgets import QLabel
 
-YELLOW = (0, 255, 255)
-
 
 class Camera:
-    def __init__(self):
+    def __init__(self, name='Threading-Camera'):
+        self.name = name
         self.cap = self.last_frame = self.ret = None
         self.is_restarted = False
-        self.connect_to_device()
 
-        start_new_thread(self.run, ())
+        self._thread = None
+
+        self.connect_to_device()
+        self._open_thread()
+
+    def _open_thread(self):
+        if self._thread is None or not self._thread.is_alive():
+            self._thread = threading.Thread(target=self.run, name=self.name)
+            self._thread.start()
+
+    def _close_thread(self):
+        self._thread.do_run = False
+        self._thread.join()
+
+    def _restart_thread(self):
+        self._close_thread()
+        self._open_thread()
+
+    def disconnect_camera(self):
+        self.release()
+        self._close_thread()
 
     def connect_to_device(self):
         if platform == 'win32':
@@ -24,12 +43,9 @@ class Camera:
         else:
             self.cap = cv2.VideoCapture(-1)
 
-        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-        self.cap.set(cv2.CAP_PROP_FPS, 20)
-
-    def get_capture(self) -> cv2.VideoCapture:
-        return self.cap
+        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 320)
+        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 240)
+        self.cap.set(cv2.CAP_PROP_FPS, 25)
 
     def read(self):
         return self.ret, self.last_frame
@@ -46,11 +62,13 @@ class Camera:
             self.is_restarted = True
             self.release()
             self.connect_to_device()
-            start_new_thread(self.run, ())
+            self._restart_thread()
             self.is_restarted = False
 
     def run(self):
-        while self.cap.isOpened() or not self.is_restarted:
+        t = threading.currentThread()
+        while getattr(t, "do_run", True) and \
+                (self.cap.isOpened() or not self.is_restarted):
             self.ret, self.last_frame = self.cap.read()
 
 
@@ -131,9 +149,10 @@ class MainWindowCamera(QThread):
                     # print('camera_views.py:100 // exp //', e)
                     pass
 
-                cv2.circle(img, (x, y), 5, YELLOW, 2)
+                cv2.circle(img, (x, y), circle_radius, yellow_color, 2)
                 cv2.putText(img, f"{x}-{y}", (x + 10, y - 10),
-                            cv2.FONT_HERSHEY_SIMPLEX, 1, YELLOW, 2)
+                            cv2.FONT_HERSHEY_SIMPLEX, text_scale,
+                            yellow_color, 2)
         return img
 
     def release(self) -> None:
@@ -150,7 +169,6 @@ class ColorRangeCamera(QThread):
         self.label = label
 
         # Подключаем камеру
-        # self.cap = cv2.VideoCapture(cv2.CAP_ANY)
         self.cam: Camera = parent.camera.cam
 
         # Устанавливаем начальные диапазоны
