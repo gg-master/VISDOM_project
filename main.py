@@ -34,7 +34,6 @@ class MainWindow(QMainWindow):
         self.camera = self.color_range_wind = \
             self.graph_window = self.an_gr_set = \
             self.server_set = self.breath_logs_win = None
-        self.fps_timer = None
 
         self.analyzer = Analyzer(self)
         self.analyzer.newCoordinatesSignal.connect(self.set_coord_in_label)
@@ -91,9 +90,10 @@ class MainWindow(QMainWindow):
             i.valueChanged.connect(self.set_breath_sett)
 
     def start_cam(self):
-        self.camera = MainWindowCamera(self, self.MainVideoBox,
-                                       self.main.camera)
-        self.camera.changePixmap.connect(self.setImage)
+        if self.camera is None:
+            self.camera = MainWindowCamera(self, self.MainVideoBox,
+                                           self.main.camera)
+            self.camera.changePixmap.connect(self.setImage)
         self.camera.start()
 
     def restart_cam(self) -> None:
@@ -137,8 +137,9 @@ class MainWindow(QMainWindow):
             delta_bot=[self.minDeltaBot.value(), self.maxDeltaBot.value()])
 
     def drop_curr_col(self):
-        self.analyzer.update_colors({})
-        self.camera.set_current_colors({})
+        for i in [self.curr_color_1, self.curr_color_2]:
+            i.dropDownMenu.emit()
+            i.currentTextChanged.emit('Выберите цвет')
 
     def set_current_colors(self) -> None:
         # Устанавливаем выбранные цвета в распознавание камеры
@@ -189,7 +190,7 @@ class MainWindow(QMainWindow):
 
     def close_extra_win(self):
         self.drop_curr_col()
-        self.camera.terminate()
+        self.camera.stop()
         self.closeWindowSignal.emit()
 
     def open_color_range_window(self) -> None:

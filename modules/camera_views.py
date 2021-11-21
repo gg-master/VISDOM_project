@@ -81,6 +81,8 @@ class MainWindowCamera(QThread):
         # Лэйбл, на котором будет отображаться картинка
         self.label = label
 
+        self.is_run = True
+
         # Подключаем камеру
         self.cam = camera
 
@@ -96,7 +98,7 @@ class MainWindowCamera(QThread):
 
     def run(self) -> None:
         # Пока камера работает получаем изображение и отображаем его
-        while self.cam.isOpened() and self.label:
+        while self.cam.isOpened() and self.label and self.is_run:
             # Считывание изображения
             ret, img = self.cam.read()
 
@@ -157,6 +159,13 @@ class MainWindowCamera(QThread):
 
     def release(self) -> None:
         self.cam.release()
+
+    def stop(self):
+        self.is_run = False
+
+    def start(self, *args):
+        self.is_run = True
+        super(MainWindowCamera, self).start()
 
 
 class ColorRangeCamera(QThread):

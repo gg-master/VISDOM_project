@@ -332,11 +332,9 @@ class ColorRangeWindow(AutoClosedQWidget):
         # Загружаем у главного окна новые цвета
         self.parent.load_colors()
 
-        # self.parent.repaint()
-        # self.parent.setUpdatesEnabled(True)
         self.parent.start_cam()
 
-        super().close()
+        super().closeEvent(a0)
 
 
 class GraphWindow(AutoClosedQWidget):
