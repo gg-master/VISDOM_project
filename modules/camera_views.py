@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 from sys import platform
-from _thread import start_new_thread
+from _thread import start_new_thread, exit_thread
 
 from PyQt5.QtGui import QImage
 from PyQt5.QtCore import QThread, Qt, pyqtSignal
@@ -12,7 +12,7 @@ YELLOW = (0, 255, 255)
 
 class Camera:
     def __init__(self):
-        self.cap = self.last_frame = None
+        self.cap = self.last_frame = self.ret = None
         self.is_restarted = False
         self.connect_to_device()
 
@@ -24,11 +24,15 @@ class Camera:
         else:
             self.cap = cv2.VideoCapture(-1)
 
+        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+        self.cap.set(cv2.CAP_PROP_FPS, 20)
+
     def get_capture(self) -> cv2.VideoCapture:
         return self.cap
 
-    def get_frame(self):
-        return self.last_frame
+    def read(self):
+        return self.ret, self.last_frame
 
     def isOpened(self):
         return self.cap.isOpened() or self.is_restarted
@@ -45,8 +49,8 @@ class Camera:
         self.is_restarted = False
 
     def run(self):
-        while self.cap.isOpened():
-            ret, self.last_frame = self.cap.read()
+        while self.cap.isOpened() or not self.is_restarted:
+            self.ret, self.last_frame = self.cap.read()
 
 
 class MainWindowCamera(QThread):
@@ -75,7 +79,10 @@ class MainWindowCamera(QThread):
         # Пока камера работает получаем изображение и отображаем его
         while self.cam.isOpened() and self.label:
             # Считывание изображения
-            img = self.cam.get_frame()
+            ret, img = self.cam.read()
+
+            if not ret:
+                break
 
             # Получаем картикну с отмеченными распознанными объектами
             img = self.get_img_with_objects(img)
@@ -157,7 +164,10 @@ class ColorRangeCamera(QThread):
         # Пока камера работает получаем изображение и отображаем его
         while self.cam.isOpened() and self.label:
             # Считывание изображения
-            img = self.cam.get_frame()
+            ret, img = self.cam.read()
+
+            if not ret:
+                break
 
             # Преобразование в hsv картинку
             hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
