@@ -42,11 +42,12 @@ class Camera:
             self.cap.release()
 
     def restart(self):
-        self.is_restarted = True
-        self.release()
-        self.connect_to_device()
-        start_new_thread(self.run, ())
-        self.is_restarted = False
+        if not self.is_restarted:
+            self.is_restarted = True
+            self.release()
+            self.connect_to_device()
+            start_new_thread(self.run, ())
+            self.is_restarted = False
 
     def run(self):
         while self.cap.isOpened() or not self.is_restarted:
