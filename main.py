@@ -190,10 +190,7 @@ class MainWindow(QMainWindow):
     def close_extra_win(self):
         self.drop_curr_col()
         self.camera.terminate()
-
-        [i.close() for i in [self.graph_window, self.an_gr_set,
-                             self.server_set, self.breath_logs_win]
-         if i is not None and i.isVisible()]
+        self.closeWindowSignal.emit()
 
     def open_color_range_window(self) -> None:
         # Закрываем окна для оптимизации
