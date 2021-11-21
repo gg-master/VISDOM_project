@@ -54,10 +54,7 @@ class MainWindow(QMainWindow):
 
     def initUI(self) -> None:
         # Включаем камеру
-        self.camera = MainWindowCamera(self, self.MainVideoBox,
-                                       self.main.camera)
-        self.camera.changePixmap.connect(self.setImage)
-        self.camera.start()
+        self.start_cam()
 
         # Загружаем сохраненные цвета
         self.load_colors()
@@ -89,6 +86,12 @@ class MainWindow(QMainWindow):
         for i in [self.timeDelta, self.minDeltaTop, self.maxDeltaTop,
                   self.minDeltaBot, self.maxDeltaBot]:
             i.valueChanged.connect(self.set_breath_sett)
+
+    def start_cam(self):
+        self.camera = MainWindowCamera(self, self.MainVideoBox,
+                                       self.main.camera)
+        self.camera.changePixmap.connect(self.setImage)
+        self.camera.start()
 
     def restart_cam(self) -> None:
         self.main.camera.restart()
@@ -178,6 +181,8 @@ class MainWindow(QMainWindow):
         self.MainVideoBox.setPixmap(QPixmap.fromImage(image))
 
     def open_color_range_window(self) -> None:
+        self.camera.terminate()
+        # self.setUpdatesEnabled(False)
         # Открываем окно для настройки цветов
         from modules.addit_windows import ColorRangeWindow
         self.color_range_wind = ColorRangeWindow(self)
