@@ -67,8 +67,8 @@ class MainWindow(QMainWindow):
         #
         # # Добавляем действия для событий
         # # Открытие различных окон
-        # self.color_range_settings.triggered.connect(
-        #     self.open_color_range_window)
+        self.color_range_settings.triggered.connect(
+            self.open_color_range_window)
         # self.open_graph_inWindow.triggered.connect(
         #     self.open_graph_in_window)
         # self.analyzer_graph_settings.triggered.connect(
