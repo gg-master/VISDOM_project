@@ -58,36 +58,36 @@ class MainWindow(QMainWindow):
         # Включаем камеру
         self.start_cam()
 
-        # Загружаем сохраненные цвета
-        self.load_colors()
+        # # Загружаем сохраненные цвета
+        # self.load_colors()
+        #
+        # # Загружаем настройки дыхания
+        # self.load_breath_set()
+        # self.set_breath_sett()
+        #
+        # # Добавляем действия для событий
+        # # Открытие различных окон
+        # self.color_range_settings.triggered.connect(
+        #     self.open_color_range_window)
+        # self.open_graph_inWindow.triggered.connect(
+        #     self.open_graph_in_window)
+        # self.analyzer_graph_settings.triggered.connect(
+        #     self.open_analyzer_graph_settings_window)
+        # self.restart_camera.triggered.connect(self.restart_cam)
+        # self.server_settings.triggered.connect(self.open_server_sett_window)
+        # self.open_logs_breath.triggered.connect(self.open_breath_logs_window)
 
-        # Загружаем настройки дыхания
-        self.load_breath_set()
-        self.set_breath_sett()
-
-        # Добавляем действия для событий
-        # Открытие различных окон
-        self.color_range_settings.triggered.connect(
-            self.open_color_range_window)
-        self.open_graph_inWindow.triggered.connect(
-            self.open_graph_in_window)
-        self.analyzer_graph_settings.triggered.connect(
-            self.open_analyzer_graph_settings_window)
-        self.restart_camera.triggered.connect(self.restart_cam)
-        self.server_settings.triggered.connect(self.open_server_sett_window)
-        self.open_logs_breath.triggered.connect(self.open_breath_logs_window)
-
-        # Изменение настроек в главном окне
-        for i in [self.curr_color_1, self.curr_color_2]:
-            # Если активировано выпадающее меню, то убираем выбранные цвета
-            i.dropDownMenu.connect(self.update_colors_in_comboBox)
-
-            # При выборе цвета загружаем его в систему распознавания
-            i.currentTextChanged.connect(self.set_current_colors)
-
-        for i in [self.timeDelta, self.minDeltaTop, self.maxDeltaTop,
-                  self.minDeltaBot, self.maxDeltaBot]:
-            i.valueChanged.connect(self.set_breath_sett)
+        # # Изменение настроек в главном окне
+        # for i in [self.curr_color_1, self.curr_color_2]:
+        #     # Если активировано выпадающее меню, то убираем выбранные цвета
+        #     i.dropDownMenu.connect(self.update_colors_in_comboBox)
+        #
+        #     # При выборе цвета загружаем его в систему распознавания
+        #     i.currentTextChanged.connect(self.set_current_colors)
+        #
+        # for i in [self.timeDelta, self.minDeltaTop, self.maxDeltaTop,
+        #           self.minDeltaBot, self.maxDeltaBot]:
+        #     i.valueChanged.connect(self.set_breath_sett)
 
     def start_cam(self):
         if self.camera is None:
