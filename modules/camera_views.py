@@ -72,10 +72,10 @@ class Camera:
             self.ret, self.last_frame = self.cap.read()
 
 
-class MainWindowCamera(QThread):
+class WindowCamera(QThread):
     changePixmap = pyqtSignal(QImage)
 
-    def __init__(self, parent, label: QLabel, camera):
+    def __init__(self,  parent, label: QLabel, camera):
         super().__init__(parent)
 
         # Лэйбл, на котором будет отображаться картинка
@@ -85,6 +85,21 @@ class MainWindowCamera(QThread):
 
         # Подключаем камеру
         self.cam = camera
+
+    def release(self) -> None:
+        self.cam.release()
+
+    def stop(self):
+        self.is_run = False
+
+    def start(self, *args):
+        self.is_run = True
+        super().start()
+
+
+class MainWindowCamera(WindowCamera):
+    def __init__(self, parent, label: QLabel, camera):
+        super().__init__(parent, label, camera)
 
         # Список цветов для распознавния
         self.current_colors = {}
@@ -157,29 +172,10 @@ class MainWindowCamera(QThread):
                             yellow_color, 2)
         return img
 
-    def release(self) -> None:
-        self.cam.release()
 
-    def stop(self):
-        self.is_run = False
-
-    def start(self, *args):
-        self.is_run = True
-        super(MainWindowCamera, self).start()
-
-
-class ColorRangeCamera(QThread):
-    changePixmap = pyqtSignal(QImage)
-
+class ColorRangeCamera(WindowCamera):
     def __init__(self, parent, label: QLabel):
-        super().__init__(parent)
-
-        # Лэйбл, на котором будет отображаться картинка
-        self.label = label
-
-        # Подключаем камеру
-        self.cam: Camera = parent.camera.cam
-
+        super().__init__(parent, label, parent.camera.cam)
         # Устанавливаем начальные диапазоны
         self.hsv_min = np.array((0, 0, 0), np.uint8)
         self.hsv_max = np.array((255, 255, 255), np.uint8)
@@ -190,7 +186,7 @@ class ColorRangeCamera(QThread):
 
     def run(self) -> None:
         # Пока камера работает получаем изображение и отображаем его
-        while self.cam.isOpened() and self.label:
+        while self.cam.isOpened() and self.label and self.is_run:
             # Считывание изображения
             ret, img = self.cam.read()
 

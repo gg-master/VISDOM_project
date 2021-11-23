@@ -138,7 +138,6 @@ class MainWindow(QMainWindow):
 
     def drop_curr_col(self):
         for i in [self.curr_color_1, self.curr_color_2]:
-            i.dropDownMenu.emit()
             i.currentTextChanged.emit('Выберите цвет')
 
     def set_current_colors(self) -> None:
