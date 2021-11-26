@@ -1,3 +1,5 @@
+import time
+
 import cv2
 import numpy as np
 from sys import platform
@@ -69,6 +71,9 @@ class Camera:
         t = threading.currentThread()
         while getattr(t, "do_run", True) and \
                 (self.cap.isOpened() or not self.is_restarted):
+            if self.is_restarted:
+                time.sleep(1.0)
+                continue
             self.ret, self.last_frame = self.cap.read()
 
 
