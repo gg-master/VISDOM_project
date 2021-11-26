@@ -75,7 +75,7 @@ class Camera:
 class WindowCamera(QThread):
     changePixmap = pyqtSignal(QImage)
 
-    def __init__(self,  parent, label: QLabel, camera):
+    def __init__(self,  parent, label: QLabel, camera: Camera):
         super().__init__(parent)
 
         # Лэйбл, на котором будет отображаться картинка
@@ -95,6 +95,10 @@ class WindowCamera(QThread):
     def start(self, *args):
         self.is_run = True
         super().start()
+
+    def restart(self):
+        self.stop()
+        self.start()
 
 
 class MainWindowCamera(WindowCamera):
@@ -117,8 +121,10 @@ class MainWindowCamera(WindowCamera):
             # Считывание изображения
             ret, img = self.cam.read()
 
-            if not ret:
+            if not ret and not self.cam.isOpened():
                 break
+            elif not ret and self.cam.isOpened():
+                continue
 
             # Получаем картикну с отмеченными распознанными объектами
             img = self.get_img_with_objects(img)
