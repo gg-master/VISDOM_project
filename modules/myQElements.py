@@ -38,6 +38,10 @@ class AutoClosedQWidget(QWidget):
         self.parent.closeWindowSignal.connect(self.close)
 
     def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
+        if not a0:
+            self.close()
+            return
+
         # Отключаемся от родителя
         self.parent.closeWindowSignal.disconnect(self.close)
 
