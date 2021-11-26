@@ -122,10 +122,8 @@ class MainWindowCamera(WindowCamera):
             # Считывание изображения
             ret, img = self.cam.read()
 
-            if not ret and not self.cam.isOpened():
+            if not ret:
                 break
-            elif not ret and self.cam.isOpened():
-                continue
 
             # Получаем картикну с отмеченными распознанными объектами
             img = self.get_img_with_objects(img)

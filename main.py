@@ -98,6 +98,7 @@ class MainWindow(QMainWindow):
 
     def restart_cam(self) -> None:
         self.main.camera.restart()
+        self.camera.restart()
 
     def load_breath_set(self) -> None:
         # Загружаем и устанавливаем все значения для дыхания из файла
