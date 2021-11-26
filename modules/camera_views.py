@@ -70,8 +70,6 @@ class Camera:
     def run(self):
         t = threading.currentThread()
         while getattr(t, "do_run", True) and self.isOpened():
-            if not self.isOpened():
-                continue
             self.ret, self.last_frame = self.cap.read()
 
 
