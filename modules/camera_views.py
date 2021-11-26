@@ -1,8 +1,5 @@
-import time
-
 import cv2
 import numpy as np
-from sys import platform
 import threading
 from data.settings.settings import *
 
@@ -40,10 +37,7 @@ class Camera:
         self._close_thread()
 
     def connect_to_device(self):
-        if platform == 'win32':
-            self.cap = cv2.VideoCapture(0 + cv2.CAP_DSHOW)
-        else:
-            self.cap = cv2.VideoCapture(-1)
+        self.cap = cv2.VideoCapture(0)
 
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 320)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 240)
@@ -62,7 +56,7 @@ class Camera:
     def restart(self):
         if not self.is_restarted:
             self.is_restarted = True
-            self.release()
+            self.disconnect_camera()
             self.connect_to_device()
             self._restart_thread()
             self.is_restarted = False
