@@ -72,7 +72,6 @@ class Camera:
         while getattr(t, "do_run", True) and \
                 (self.cap.isOpened() or not self.is_restarted):
             if self.is_restarted:
-                time.sleep(1.0)
                 continue
             self.ret, self.last_frame = self.cap.read()
 
