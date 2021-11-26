@@ -33,8 +33,8 @@ class Camera:
         self._open_thread()
 
     def disconnect_camera(self):
-        self.release()
         self._close_thread()
+        self.release()
 
     def connect_to_device(self):
         self.cap = cv2.VideoCapture(0)
