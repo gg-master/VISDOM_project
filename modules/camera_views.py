@@ -64,7 +64,7 @@ class Camera:
             self.is_restarted = True
             self.release()
             self.connect_to_device()
-            self._restart_thread()
+            # self._restart_thread()
             self.is_restarted = False
 
     def run(self):
