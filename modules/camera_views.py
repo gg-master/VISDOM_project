@@ -64,14 +64,13 @@ class Camera:
             self.is_restarted = True
             self.release()
             self.connect_to_device()
-            # self._restart_thread()
+            self._restart_thread()
             self.is_restarted = False
 
     def run(self):
         t = threading.currentThread()
-        while getattr(t, "do_run", True) and \
-                (self.cap.isOpened() or not self.is_restarted):
-            if self.is_restarted:
+        while getattr(t, "do_run", True) and self.isOpened():
+            if not self.isOpened():
                 continue
             self.ret, self.last_frame = self.cap.read()
 
