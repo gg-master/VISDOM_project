@@ -1,1 +1,1 @@
-{"TimeDelta": 2000, "MinDeltaTop": 37, "MaxDeltaTop": 500, "MinDeltaBot": 30, "MaxDeltaBot": 500, "DetailSettings": {"window_len": 20, "save_full_data": false, "timer_interval": 50, "maxChunks": 300}}
+{"TimeDelta": 2000, "MinDeltaTop": 0, "MaxDeltaTop": 500, "MinDeltaBot": 0, "MaxDeltaBot": 500, "DetailSettings": {"window_len": 20, "save_full_data": false, "timer_interval": 50, "maxChunks": 300}}

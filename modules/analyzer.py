@@ -44,7 +44,7 @@ class Graph:
         # и обновлять данные в графике
         self.timer = pg.QtCore.QTimer()
         self.timer.timeout.connect(self.update)
-        self.timer.start(50)
+        self.timer.start(100)
 
         # Если создается график в окне, и нам необходимо в нем отображать
         # данные главного графика, копируем значения из главного графика
@@ -163,10 +163,8 @@ class Graph:
 
     @staticmethod
     def get_key_by_name(name: str, dictionary: dict) -> int:
-        for k, v in dictionary.items():
-            if v['name'] == name:
-                return k
-        return -1
+        arr = list(filter(lambda x: x[1]['name'] == name, dictionary.items()))
+        return arr[0][0] if arr else -1
 
     def is_active(self) -> bool:
         """ Имеются ли на графике какие-либо кривые"""
@@ -394,10 +392,9 @@ class Analyzer(QObject):
         [graph.reload_curves() for graph in self.graphs]
 
     def get_key_by_name(self, name: str) -> int:
-        for k, v in self.colors.items():
-            if v['name'] == name:
-                return k
-        return -1
+        arr: List = list(filter(lambda x: x[1]['name'] == name,
+                                self.colors.items()))
+        return arr[0][0] if arr else -1
 
     def get_last_coordinates(self) -> List[int]:
         return self.main_graph.data[self.main_graph.ptr][1:]

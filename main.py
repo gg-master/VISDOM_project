@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 import sys
 import json
+import threading
+import time
 
 from PyQt5 import uic, QtGui
 from PyQt5.QtCore import pyqtSlot, pyqtSignal, QTimer
@@ -10,7 +12,7 @@ from PyQt5.QtWidgets import QApplication, QMainWindow
 
 from modules.tools import abspath
 from modules.analyzer import Analyzer
-from modules.camera_views import MainWindowCamera
+from modules.camera_views import MainWindowCamera, Camera
 from modules.network import Network
 
 
@@ -54,7 +56,7 @@ class MainWindow(QMainWindow):
 
     def initUI(self) -> None:
         # Включаем камеру
-        self.start_camera()
+        self.start_cam()
 
         # Загружаем сохраненные цвета
         self.load_colors()
@@ -71,7 +73,7 @@ class MainWindow(QMainWindow):
             self.open_graph_in_window)
         self.analyzer_graph_settings.triggered.connect(
             self.open_analyzer_graph_settings_window)
-        self.restart_camera.triggered.connect(self.start_camera)
+        self.restart_camera.triggered.connect(self.restart_cam)
         self.server_settings.triggered.connect(self.open_server_sett_window)
         self.open_logs_breath.triggered.connect(self.open_breath_logs_window)
 
@@ -87,16 +89,16 @@ class MainWindow(QMainWindow):
                   self.minDeltaBot, self.maxDeltaBot]:
             i.valueChanged.connect(self.set_breath_sett)
 
-    def start_camera(self) -> None:
-        # Запуск камеры
-
-        # Если камера была включена, то отключаем ее
-        if self.camera is not None:
-            self.camera.release()
-
-        self.camera = MainWindowCamera(self, self.MainVideoBox)
-        self.camera.changePixmap.connect(self.setImage)
+    def start_cam(self):
+        if self.camera is None:
+            self.camera = MainWindowCamera(self, self.MainVideoBox,
+                                           self.main.camera)
+            self.camera.changePixmap.connect(self.setImage)
         self.camera.start()
+
+    def restart_cam(self) -> None:
+        self.main.camera.restart()
+        self.camera.restart()
 
     def load_breath_set(self) -> None:
         # Загружаем и устанавливаем все значения для дыхания из файла
@@ -134,6 +136,10 @@ class MainWindow(QMainWindow):
             timeDelta=self.timeDelta.value(),
             delta_top=[self.minDeltaTop.value(), self.maxDeltaTop.value()],
             delta_bot=[self.minDeltaBot.value(), self.maxDeltaBot.value()])
+
+    def drop_curr_col(self):
+        for i in [self.curr_color_1, self.curr_color_2]:
+            i.currentTextChanged.emit('Выберите цвет')
 
     def set_current_colors(self) -> None:
         # Устанавливаем выбранные цвета в распознавание камеры
@@ -182,7 +188,15 @@ class MainWindow(QMainWindow):
     def setImage(self, image: QImage) -> None:
         self.MainVideoBox.setPixmap(QPixmap.fromImage(image))
 
+    def close_extra_win(self):
+        self.drop_curr_col()
+        self.camera.stop()
+        self.closeWindowSignal.emit()
+
     def open_color_range_window(self) -> None:
+        # Закрываем окна для оптимизации
+        self.close_extra_win()
+
         # Открываем окно для настройки цветов
         from modules.addit_windows import ColorRangeWindow
         self.color_range_wind = ColorRangeWindow(self)
@@ -230,10 +244,7 @@ class MainWindow(QMainWindow):
         self.save_breath_sett_to_json()
         self.closeWindowSignal.emit()
 
-        # При закрытии приложения отключаемся от сервера
-        if self.main.is_network_open():
-            self.main.net.disconnect()
-
+        self.main.end_process()
         super().closeEvent(a0)
 
     def set_status_bar_text(self, text: str, style: str) -> None:
@@ -282,6 +293,8 @@ class Main:
     def __init__(self) -> None:
         self.net = None
 
+        self.camera = Camera()
+
         # Создаем приложение и запускаем главное окно
         app = QApplication(sys.argv)
         self.main_window = MainWindow(self)
@@ -307,6 +320,12 @@ class Main:
         # Подключаем сигнал с ошибками к главному окно для их отображения
         self.net.exceptionSignal.connect(
             self.main_window.check_network_state)
+
+    def end_process(self):
+        # При закрытии приложения отключаемся от сервера
+        if self.is_network_open():
+            self.net.disconnect()
+        self.camera.disconnect_camera()
 
 
 if __name__ == '__main__':
