@@ -161,7 +161,7 @@ class Network(QObject):
         except (ConnectionRefusedError, socket.gaierror) as e:
             return 'Проверьте состояние интернета и попробуйте снова.'
         except Exception as e:
-            return str(e)
+            return str(e) if str(e) else 'Соединение с сервером разорвано.'
 
 
 if __name__ == '__main__':
