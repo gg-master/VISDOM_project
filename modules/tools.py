@@ -5,4 +5,4 @@ def abspath(rel_path: str) -> str:
     rel_path = '/'.join(rel_path.split('\\'))
     if os.getcwd().endswith('modules'):
         os.chdir('..')
-    return os.path.join(os.getcwd(), rel_path)
+    return rel_path
