@@ -1,10 +1,9 @@
 import colorsys
+from typing import Any, Dict, List, Tuple
+
 import numpy as np
 import pyqtgraph as pg
-
-from PyQt5.QtCore import pyqtSignal, QObject
-
-from typing import List, Dict, Tuple, Any
+from PyQt5.QtCore import QObject, pyqtSignal
 
 
 class Graph:

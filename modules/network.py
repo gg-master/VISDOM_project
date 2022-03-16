@@ -1,12 +1,11 @@
+import asyncio
 import json
 import random
 import socket
 import string
-import asyncio
 from _thread import start_new_thread
 
 import websockets
-
 from PyQt5.QtCore import QObject, pyqtSignal
 
 
@@ -16,39 +15,33 @@ class Network(QObject):
     pi_data = {
         'status': 'registration',
         'type': 'pi',
-        'token': None
+        'token': -1
     }
 
-    def __init__(self, parent, addr, token, is_test=False):
-        super().__init__(parent)
+    def __init__(self):
+        super().__init__(parent=None)
         # url = 'ws://127.0.0.1:8765'
         # self.addr = "ws://localhost:8080"
-        self.addr = addr
+        self.addr = self.token = None
 
-        self.token = token
-
+        self.alive = False
         self.send_data = self.received_data = None
-
-        self.close_conn = False
-
-        # Индетификационный код последнего сообщения
-        self.last_vcode = ''
 
         # Ответ после подключения
         self.conn_resp = None
+        # Индетификационный код последнего сообщения
+        self.last_vcode = ''
 
-        # Запускаем новый поток, т.к asyncio.run() является
-        # блокирующей функцией
-        if not is_test:
-            start_new_thread(self.start_async, ())
-        else:
-            self.start_async()
+    def open_connection(self, address, token):
+        # Open new connection with server
+        self.addr, self.token = address, token
 
-    def get_received_data(self):
-        return self.received_data
+        start_new_thread(self.start_async, ())
 
-    def get_conn_resp(self):
-        return self.conn_resp
+    def send_signal(self) -> None:
+        # Если открыто соединение с сервером, то отправляем сигнал
+        if self.is_open():
+            self.net.set_send_get_recv({'signal': True})
 
     def set_send_get_recv(self, data):
         # Генерируем уникальный код, который будет отвечает за определенную
@@ -78,6 +71,8 @@ class Network(QObject):
     async def start_client(self):
         try:
             async with websockets.connect(self.addr) as websocket:
+                self.alive = True
+
                 # Проверяем данные, которые отправляются для регистрации
                 if not self.validate_reg_data():
                     raise Exception('Токен не прошел валидацию')
@@ -95,7 +90,7 @@ class Network(QObject):
                 # Начинаем общаться с сервером
                 while True:
                     # Если соединение закрыто, отправляем сигнал на сервер
-                    if self.close_conn:
+                    if not self.alive:
                         await websocket.send(
                             json.dumps({'status': 'Close connection'}))
                         break
@@ -113,7 +108,7 @@ class Network(QObject):
 
                     if self.received_data['answer'] == 'Start sharing':
                         # Главный цикл, который отправляет данные на сервер
-                        while not self.close_conn:
+                        while self.alive:
                             # Если данные обновились,
                             # то отправляем их на сервер
                             if self.send_data is not None and \
@@ -149,20 +144,27 @@ class Network(QObject):
             self.exceptionSignal.emit(self.validate_exception(e))
             print('exc in network:', e)
         finally:
-            self.close_conn = True
+            self.alive = False
 
     def disconnect(self):
-        self.close_conn = True
+        self.alive = False
+        self.addr = self.token = None
+        self.send_data = self.received_data = self.conn_resp = None
+        self.last_vcode = ''
+
+    def is_open(self):
+        return self.alive
 
     @staticmethod
     def validate_exception(exc):
         try:
             raise exc
-        except (ConnectionRefusedError, socket.gaierror) as e:
+        except (ConnectionRefusedError, socket.gaierror):
             return 'Проверьте состояние интернета и попробуйте снова.'
         except Exception as e:
             return str(e) if str(e) else 'Соединение с сервером разорвано.'
 
 
 if __name__ == '__main__':
-    net = Network(QObject(), 'ws://localhost:8080', 1234, is_test=True)
+    net = Network()
+    net.open_connection('ws://localhost:8080', 1234)

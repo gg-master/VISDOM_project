@@ -1,8 +1,8 @@
 from PyQt5 import QtGui
 from PyQt5.Qt import *
-from PyQt5.QtWidgets import QComboBox
+from PyQt5.QtCore import QEvent, pyqtSignal
 from PyQt5.QtGui import QMouseEvent
-from PyQt5.QtCore import pyqtSignal, QEvent
+from PyQt5.QtWidgets import QComboBox
 
 
 class ComboBoxPDrDwSi(QComboBox):

@@ -2,14 +2,14 @@ import json
 from typing import List
 
 from PyQt5 import uic
-from PyQt5.QtCore import pyqtSlot, Qt
-from PyQt5.QtWidgets import QWidget, QMessageBox
-from PyQt5.QtGui import QImage, QPixmap, QCloseEvent
+from PyQt5.QtCore import Qt, pyqtSlot
+from PyQt5.QtGui import QCloseEvent, QImage, QPixmap
+from PyQt5.QtWidgets import QMessageBox
 
-from modules.tools import abspath
 from modules.analyzer import Graph
 from modules.camera_views import ColorRangeCamera
 from modules.myQElements import AutoClosedQWidget
+from modules.tools import abspath
 
 
 class ColorRangeWindow(AutoClosedQWidget):
@@ -27,7 +27,7 @@ class ColorRangeWindow(AutoClosedQWidget):
 
     def initUI(self) -> None:
         # Инициализация камеры
-        self.camera = ColorRangeCamera(self.parent, self.VideoBox)
+        self.camera = ColorRangeCamera(self.parent.camera, self.VideoBox)
         self.camera.changePixmap.connect(self.setImage)
         self.camera.start()
 
@@ -63,8 +63,9 @@ class ColorRangeWindow(AutoClosedQWidget):
                       encoding='utf-8') as file:
                 self.colors = {i['name']: [i['hsv_min'], i['hsv_max']]
                                for i in json.load(file)['Colors']}
-        except Exception:
+        except FileNotFoundError:
             self.colors = {'Цвет№_0': [[0, 0, 0], [255, 255, 255]]}
+
         # Загружаем названия цветов в comboBox
         for i in self.colors.keys():
             self.colorsBox.addItem(i)
@@ -397,8 +398,10 @@ class AnalyzerGraphSettingsWindow(AutoClosedQWidget):
 
 
 class ServerSettingsWindow(AutoClosedQWidget):
-    def __init__(self, parent):
+    def __init__(self, parent, network):
         super().__init__(parent)
+        self.network = network
+
         uic.loadUi(abspath('data/ui/server_settings_window.ui'), self)
 
         self.initUI()
@@ -411,8 +414,8 @@ class ServerSettingsWindow(AutoClosedQWidget):
 
         # Если соединение открыто, то выставляем переключатель и подключаем
         # обработчик для сигнала об ошибках
-        if self.parent.main.is_network_open():
-            self.parent.main.net.exceptionSignal.connect(self.show_net_exc)
+        if self.network.is_open():
+            self.network.exceptionSignal.connect(self.show_net_exc)
             self.set_connect_flag(True)
 
     def load_data(self) -> None:
@@ -423,7 +426,7 @@ class ServerSettingsWindow(AutoClosedQWidget):
                 dct = json.load(file)
                 self.token.setText(dct['token'])
                 self.address.setText(dct['address'])
-        except Exception:
+        except FileNotFoundError:
             pass
 
     def save_to_json(self) -> None:
@@ -433,7 +436,7 @@ class ServerSettingsWindow(AutoClosedQWidget):
                 json.dump({'address': self.address.text(),
                            'token': self.token.text()}, file,
                           ensure_ascii=False)
-        except Exception:
+        except FileNotFoundError:
             pass
 
     def set_connect_flag(self, flag: bool) -> None:
@@ -464,14 +467,15 @@ class ServerSettingsWindow(AutoClosedQWidget):
             self.set_message()
 
             # Если соединение с сервером уже установлено, то разрываем его
-            if self.parent.main.is_network_open():
+            if self.network.is_open():
                 self.disc_from_server()
 
             # Создаем новое соединение с сервером
-            self.parent.main.create_network(address=self.address.text(),
-                                            token=self.token.text())
+            self.network.open_connection(address=self.address.text(),
+                                         token=self.token.text())
+
             # Подключаем обработчик для ошибок
-            self.parent.main.net.exceptionSignal.connect(self.show_net_exc)
+            self.network.exceptionSignal.connect(self.show_net_exc)
 
             # Переключаем в интерфейсе переключатель о
             # подключении/отключении соединения
@@ -479,8 +483,8 @@ class ServerSettingsWindow(AutoClosedQWidget):
 
     def disc_from_server(self) -> None:
         # Отключаемся от сервера
-        if self.parent.main.is_network_open():
-            self.parent.main.net.disconnect()
+        if self.network.is_open():
+            self.network.disconnect()
             self.set_connect_flag(False)
 
     def show_net_exc(self, exc: str) -> None:
@@ -491,8 +495,8 @@ class ServerSettingsWindow(AutoClosedQWidget):
 
     def closeEvent(self, a0: QCloseEvent) -> None:
         # При закрытии отключаемся от сигнала для детекта ошибок
-        if self.parent.main.is_network_open():
-            self.parent.main.net.exceptionSignal.disconnect(self.show_net_exc)
+        if self.network.is_open():
+            self.network.exceptionSignal.disconnect(self.show_net_exc)
 
         self.save_to_json()
         super().closeEvent(a0)

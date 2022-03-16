@@ -1,11 +1,12 @@
+import threading
+
 import cv2
 import numpy as np
-import threading
-from data.settings.settings import *
-
+from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtGui import QImage
-from PyQt5.QtCore import QThread, Qt, pyqtSignal
 from PyQt5.QtWidgets import QLabel
+
+from data.settings.settings import *
 
 
 class Camera:
@@ -70,8 +71,8 @@ class Camera:
 class WindowCamera(QThread):
     changePixmap = pyqtSignal(QImage)
 
-    def __init__(self,  parent, label: QLabel, camera: Camera):
-        super().__init__(parent)
+    def __init__(self, label: QLabel, camera: Camera):
+        super().__init__(parent=None)
 
         # Лэйбл, на котором будет отображаться картинка
         self.label = label
@@ -97,8 +98,8 @@ class WindowCamera(QThread):
 
 
 class MainWindowCamera(WindowCamera):
-    def __init__(self, parent, label: QLabel, camera):
-        super().__init__(parent, label, camera)
+    def __init__(self, label: QLabel, camera):
+        super().__init__(label, camera)
 
         # Список цветов для распознавния
         self.current_colors = {}
@@ -161,7 +162,7 @@ class MainWindowCamera(WindowCamera):
                 try:
                     # Добавляем новые координаты для точки определенного цвета
                     self.parent().analyzer.add_next_position(name, (x, y))
-                except Exception as e:
+                except Exception:
                     # print('camera_views.py:100 // exp //', e)
                     pass
 
@@ -173,8 +174,8 @@ class MainWindowCamera(WindowCamera):
 
 
 class ColorRangeCamera(WindowCamera):
-    def __init__(self, parent, label: QLabel):
-        super().__init__(parent, label, parent.camera.cam)
+    def __init__(self, camera: WindowCamera, label: QLabel):
+        super().__init__(label, camera.cam)
         # Устанавливаем начальные диапазоны
         self.hsv_min = np.array((0, 0, 0), np.uint8)
         self.hsv_max = np.array((255, 255, 255), np.uint8)
